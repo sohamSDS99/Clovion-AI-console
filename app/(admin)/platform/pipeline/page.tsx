@@ -28,6 +28,7 @@ import {
 } from '@/lib/admin/format'
 import type { ColumnDef } from '@/components/admin/DataTable'
 import type { PlanTier, EngineKey } from '@/lib/db/types'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 
 const m = pageMeta['/platform/pipeline']!
 
@@ -192,17 +193,6 @@ const COST_COLS: ColumnDef<CostRow, any>[] = [
   },
 ]
 
-const CHART_PALETTE = [
-  'var(--chart-1)',
-  'var(--chart-2)',
-  'var(--chart-3)',
-  'var(--chart-4)',
-  'var(--chart-5)',
-  'var(--chart-6)',
-  'var(--chart-7)',
-  'var(--chart-8)',
-]
-
 // Canonical engine list (rows of the health matrix). Mirrors EngineKey enum.
 // `google_aio` is the schema key — surfaced to the UI as "AI OVERVIEWS".
 const ENGINE_ROWS: Array<{ key: EngineKey; label: string }> = [
@@ -215,6 +205,10 @@ const ENGINE_ROWS: Array<{ key: EngineKey; label: string }> = [
 ]
 
 const DAY_MS = 24 * 60 * 60 * 1000
+
+// Silence unused-import warnings for symbols kept for parity with the source.
+void subscriptions
+void eq
 
 export default async function PipelinePage() {
   const data = await loadPipeline()

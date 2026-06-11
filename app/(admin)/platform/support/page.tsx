@@ -12,6 +12,7 @@ import {
   formatPercent,
   formatDuration,
 } from '@/lib/admin/format'
+import { paletteAt } from '@/lib/admin/palette'
 
 const m = pageMeta['/platform/support']!
 
@@ -64,6 +65,10 @@ export default async function SupportPage() {
   const promPct = nps.responses ? (nps.promoters / nps.responses) * 100 : 0
   const passPct = nps.responses ? (nps.passives / nps.responses) * 100 : 0
   const detPct = nps.responses ? (nps.detractors / nps.responses) * 100 : 0
+
+  // Distinct palette colors for the three Sparklines that share this view
+  // (TICKET VOLUME / FRT MEDIAN / CSAT TREND).
+  const sparkColors = [paletteAt(0), paletteAt(2), paletteAt(1)] as const
 
   return (
     <>
@@ -130,7 +135,7 @@ export default async function SupportPage() {
                   NEW / DAY
                 </span>
               </div>
-              <Sparkline values={values(d.ticketsSeries)} width={420} height={48} />
+              <Sparkline values={values(d.ticketsSeries)} width={420} height={48} color={sparkColors[0]} label="TICKETS" />
             </div>
           )}
         </Panel>
@@ -148,7 +153,7 @@ export default async function SupportPage() {
                   TARGET ≤2X BASELINE
                 </span>
               </div>
-              <Sparkline values={values(d.frtSeries)} width={420} height={48} />
+              <Sparkline values={values(d.frtSeries)} width={420} height={48} color={sparkColors[1]} label="FRT" />
             </div>
           )}
         </Panel>
@@ -200,7 +205,7 @@ export default async function SupportPage() {
                   4-5 / RESP
                 </span>
               </div>
-              <Sparkline values={values(d.csatSeries)} width={300} height={42} />
+              <Sparkline values={values(d.csatSeries)} width={300} height={42} color={sparkColors[2]} label="CSAT" />
             </div>
           )}
         </Panel>

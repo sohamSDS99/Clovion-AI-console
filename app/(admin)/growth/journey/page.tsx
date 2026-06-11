@@ -10,27 +10,32 @@ import { Calendar } from '@/components/admin/charts/Calendar'
 import { pageMeta } from '@/lib/admin/content'
 import { loadJourney } from '@/lib/admin/queries/journey'
 import { formatNumber, formatPercent } from '@/lib/admin/format'
+import { paletteAt, paletteForKey } from '@/lib/admin/palette'
 
 const m = pageMeta['/growth/journey']!
 
+// Per-channel palette (5 channels). Each channel gets a distinct hue so the
+// stacked bars read at a glance.
 const CHANNEL_COLORS: Record<string, string> = {
-  ORGANIC_SEARCH: '#6366f1',
-  PAID_SEARCH: '#06b6d4',
-  PAID_SOCIAL: '#ec4899',
-  REFERRAL: '#10b981',
-  DIRECT: '#f59e0b',
+  ORGANIC_SEARCH: 'var(--chart-1)',
+  PAID_SEARCH: 'var(--chart-6)',
+  PAID_SOCIAL: 'var(--chart-5)',
+  REFERRAL: 'var(--chart-2)',
+  DIRECT: 'var(--chart-3)',
 }
 
 export default async function JourneyPage() {
   const data = await loadJourney()
 
-  // Build Sankey props
-  const sankeyNodes: SankeyNode[] = data.stages.map((s) => ({
+  // Build Sankey props. Override stage colors with palette cycling so each
+  // journey stage renders in a distinct hue (the underlying query reuses a
+  // single emerald for 6 of the 11 stages).
+  const sankeyNodes: SankeyNode[] = data.stages.map((s, i) => ({
     id: s.key,
     label: s.label,
     value: s.count,
     column: s.column,
-    color: s.color,
+    color: paletteAt(i),
   }))
 
   // Add a virtual "drop" sink node at the rightmost column to collect dropoffs
@@ -43,7 +48,7 @@ export default async function JourneyPage() {
       label: 'DROP-OFF',
       value: dropTotal,
       column: 11,
-      color: '#ef4444',
+      color: 'var(--chart-4)',
     })
   }
 
@@ -51,14 +56,14 @@ export default async function JourneyPage() {
     source: l.source,
     target: l.target,
     value: l.value,
-    color: l.isDropoff ? '#ef4444' : undefined,
+    color: l.isDropoff ? 'var(--chart-4)' : undefined,
   }))
 
   // TTV: x-axis labels are bucket ceilings, y is count
   const ttvSeries = [
     {
       name: 'ACCOUNTS',
-      color: '#6366f1',
+      color: paletteAt(0),
       values: data.ttvBuckets.map((b) => b.count),
     },
   ]
@@ -79,7 +84,7 @@ export default async function JourneyPage() {
     segments: row.segments.map((seg) => ({
       name: seg.name,
       value: seg.value,
-      color: CHANNEL_COLORS[seg.name] ?? '#6366f1',
+      color: CHANNEL_COLORS[seg.name] ?? paletteForKey(seg.name),
     })),
   }))
 
@@ -175,7 +180,7 @@ export default async function JourneyPage() {
 
         <Panel title="JNY.SIGNUPS_DAILY" meta="LAST 60D">
           {data.signupsCalendar.length ? (
-            <Calendar values={data.signupsCalendar} color="#6366f1" />
+            <Calendar values={data.signupsCalendar} color={paletteAt(0)} />
           ) : (
             <Empty />
           )}

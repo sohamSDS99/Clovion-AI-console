@@ -21,6 +21,8 @@ export type BarsProps = {
   className?: string
   /** Default formatter for the value when row.display is absent. */
   format?: (v: number) => string
+  /** Optional bar fill color. Defaults to black. */
+  color?: string
 }
 
 function pct(t: number): string {
@@ -34,6 +36,7 @@ export function Bars({
   labelWidth = 80,
   className,
   format = (v) => v.toLocaleString('en-US'),
+  color,
 }: BarsProps) {
   const explicitMax = rows.reduce((m, r) => Math.max(m, r.max ?? 0), 0)
   const valuesMax = rows.reduce((m, r) => Math.max(m, r.value), 0)
@@ -47,7 +50,7 @@ export function Bars({
       {rows.map((r, i) => {
         const pctVal = Math.max(0, Math.min(1, r.value / max))
         const isHovered = hovered === i
-        // Bar fill is solid black — use white inset highlight.
+        // Bar fill is solid black by default - use white inset highlight.
         const outline = isHovered
           ? 'inset 0 0 0 1.5px rgba(255,255,255,1)'
           : undefined
@@ -91,10 +94,11 @@ export function Bars({
               style={{ height: Math.max(2, Math.floor(height / 2.5)) }}
             >
               <div
-                className="absolute inset-y-0 left-0 bg-black"
+                className="absolute inset-y-0 left-0"
                 style={{
                   width: `${(pctVal * 100).toFixed(2)}%`,
                   boxShadow: outline,
+                  background: color ?? '#000',
                 }}
               />
             </div>

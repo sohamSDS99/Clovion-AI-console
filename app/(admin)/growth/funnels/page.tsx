@@ -9,6 +9,7 @@ import { TaperedFunnel } from '@/components/admin/charts/TaperedFunnel'
 import { pageMeta } from '@/lib/admin/content'
 import { loadFunnelList, loadFunnel } from '@/lib/admin/queries/funnels'
 import { formatNumber, formatPercent } from '@/lib/admin/format'
+import { paletteAt } from '@/lib/admin/palette'
 
 const m = pageMeta['/growth/funnels']!
 
@@ -32,6 +33,19 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
   const primaryDetail = primaryFunnel
     ? await loadFunnel(primaryFunnel.funnelId)
     : null
+
+  // Index the selected funnel within `list` so its highlight color matches the
+  // color it gets in the cards grid below.
+  const selectedIndex = selected
+    ? list.findIndex((f) => f.funnelId === selected.funnelId)
+    : -1
+  const selectedColor = selected
+    ? paletteAt(selectedIndex >= 0 ? selectedIndex : 0)
+    : undefined
+
+  // Primary funnel uses the first palette slot (index 0) so it visually anchors
+  // the cards grid below (where the first card also gets index 0).
+  const primaryColor = paletteAt(0)
 
   return (
     <>
@@ -97,6 +111,7 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
                 conversionPct: s.conversionPct * 100,
               }))}
               labelWidth={240}
+              color={selectedColor}
             />
           ) : (
             <Empty />
@@ -125,6 +140,7 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
                 }))}
                 labelWidth={180}
                 height={16}
+                color={primaryColor}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -140,6 +156,7 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
                   }))}
                   width={420}
                   stepHeight={48}
+                  color={primaryColor}
                 />
               </div>
             </div>
@@ -153,8 +170,13 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
             <Empty />
           </Panel>
         ) : (
-          list.map((f) => (
-            <FunnelCard key={f.funnelId} funnelId={f.funnelId} def={f} />
+          list.map((f, idx) => (
+            <FunnelCard
+              key={f.funnelId}
+              funnelId={f.funnelId}
+              def={f}
+              color={paletteAt(idx)}
+            />
           ))
         )}
       </div>
@@ -165,6 +187,7 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
 async function FunnelCard({
   funnelId,
   def,
+  color,
 }: {
   funnelId: string
   def: {
@@ -176,6 +199,7 @@ async function FunnelCard({
     active: boolean
     version: number
   }
+  color: string
 }) {
   const detail = await loadFunnel(funnelId)
 
@@ -215,7 +239,7 @@ async function FunnelCard({
           <span>{def.name}</span>
         </div>
         {stepBars.length ? (
-          <Bars rows={stepBars} labelWidth={180} height={16} />
+          <Bars rows={stepBars} labelWidth={180} height={16} color={color} />
         ) : (
           <Empty />
         )}

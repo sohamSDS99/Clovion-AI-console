@@ -17,6 +17,8 @@ export type FunnelProps = {
   steps: FunnelStep[]
   className?: string
   labelWidth?: number
+  /** Optional bar fill color. Defaults to black. */
+  color?: string
 }
 
 function pct(n: number) {
@@ -26,7 +28,7 @@ function pct(n: number) {
 
 type Row = { label: string; value: string }
 
-export function Funnel({ steps, className, labelWidth = 200 }: FunnelProps) {
+export function Funnel({ steps, className, labelWidth = 200, color }: FunnelProps) {
   const { state, show, move, hide } = useTooltip()
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
@@ -89,10 +91,11 @@ export function Funnel({ steps, className, labelWidth = 200 }: FunnelProps) {
               }}
             >
               <div
-                className="absolute inset-y-0 left-0 bg-black"
+                className="absolute inset-y-0 left-0"
                 style={{
                   width: `${(widthPct * 100).toFixed(2)}%`,
                   boxShadow: isHovered ? 'inset 0 0 0 1.5px #fff' : 'none',
+                  background: color ?? '#000',
                 }}
               />
             </div>

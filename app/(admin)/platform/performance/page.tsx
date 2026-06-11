@@ -15,6 +15,7 @@ import {
   formatBenchmark,
 } from '@/lib/admin/format'
 import { metricByKey } from '@/lib/admin/metrics'
+import { paletteAt } from '@/lib/admin/palette'
 
 const m = pageMeta['/platform/performance']!
 
@@ -79,6 +80,11 @@ export default async function PerformancePage() {
   const apiP95Ms = Math.round(p95Now)
   const apiP95Target = 500
   const apiP95Budget = Math.max(0, Math.min(1, 1 - apiP95Ms / apiP95Target))
+
+  // Per-row palette colors so the three stacked Sparklines in each panel render
+  // as distinct series (LCP/INP/CLS and P50/P95/P99).
+  const cwvColors = [paletteAt(0), paletteAt(1), paletteAt(2)] as const
+  const apiColors = [paletteAt(5), paletteAt(6), paletteAt(7)] as const
 
   return (
     <>
@@ -206,17 +212,17 @@ export default async function PerformancePage() {
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-[60px_1fr_auto] items-center gap-3">
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-black/60">LCP</span>
-              <Sparkline values={values(d.lcpSeries)} width={320} height={28} />
+              <Sparkline values={values(d.lcpSeries)} width={320} height={28} color={cwvColors[0]} label="LCP" />
               <span className="font-mono tabular-nums text-[11px]">{formatDuration(lcpNow)}</span>
             </div>
             <div className="grid grid-cols-[60px_1fr_auto] items-center gap-3">
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-black/60">INP</span>
-              <Sparkline values={values(d.inpSeries)} width={320} height={28} />
+              <Sparkline values={values(d.inpSeries)} width={320} height={28} color={cwvColors[1]} label="INP" />
               <span className="font-mono tabular-nums text-[11px]">{formatDuration(inpNow)}</span>
             </div>
             <div className="grid grid-cols-[60px_1fr_auto] items-center gap-3">
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-black/60">CLS</span>
-              <Sparkline values={values(d.clsSeries)} width={320} height={28} />
+              <Sparkline values={values(d.clsSeries)} width={320} height={28} color={cwvColors[2]} label="CLS" />
               <span className="font-mono tabular-nums text-[11px]">{clsNow.toFixed(3)}</span>
             </div>
           </div>
@@ -226,17 +232,17 @@ export default async function PerformancePage() {
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-[60px_1fr_auto] items-center gap-3">
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-black/60">P50</span>
-              <Sparkline values={values(d.apiP50Series)} width={320} height={28} />
+              <Sparkline values={values(d.apiP50Series)} width={320} height={28} color={apiColors[0]} label="P50" />
               <span className="font-mono tabular-nums text-[11px]">{formatDuration(p50Now)}</span>
             </div>
             <div className="grid grid-cols-[60px_1fr_auto] items-center gap-3">
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-black/60">P95</span>
-              <Sparkline values={values(d.apiP95Series)} width={320} height={28} />
+              <Sparkline values={values(d.apiP95Series)} width={320} height={28} color={apiColors[1]} label="P95" />
               <span className="font-mono tabular-nums text-[11px]">{formatDuration(p95Now)}</span>
             </div>
             <div className="grid grid-cols-[60px_1fr_auto] items-center gap-3">
               <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-black/60">P99</span>
-              <Sparkline values={values(d.apiP99Series)} width={320} height={28} />
+              <Sparkline values={values(d.apiP99Series)} width={320} height={28} color={apiColors[2]} label="P99" />
               <span className="font-mono tabular-nums text-[11px]">{formatDuration(p99Now)}</span>
             </div>
           </div>
@@ -305,7 +311,7 @@ export default async function PerformancePage() {
                   NON-5XX ÷ TOTAL
                 </span>
               </div>
-              <Sparkline values={values(d.errorRateSeries)} width={420} height={48} />
+              <Sparkline values={values(d.errorRateSeries)} width={420} height={48} color={paletteAt(3)} label="ERROR" />
             </div>
           )}
         </Panel>
@@ -346,7 +352,7 @@ export default async function PerformancePage() {
                   TARGET 99.9%
                 </span>
               </div>
-              <Sparkline values={values(d.uptimeSeries)} width={420} height={48} />
+              <Sparkline values={values(d.uptimeSeries)} width={420} height={48} color={paletteAt(1)} label="UPTIME" />
             </div>
           )}
         </Panel>
