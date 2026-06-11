@@ -11,7 +11,7 @@
   --mute: rgba(0, 0, 0, 0.45);
   --mute-2: rgba(0, 0, 0, 0.65);
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --sans: var(--font-saans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   /* Chart palette — ONLY for chart fills/strokes. Never used on chrome. */
   --chart-1: #6366f1; /* indigo — primary series */
@@ -31,10 +31,13 @@ html, body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
+  font-weight: 600;
   font-size: 12px;
   line-height: 1.45;
-  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  font-feature-settings: 'tnum' 1, 'cv11' 1, 'ss01' 1;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .font-mono, .mono, code, kbd, pre, samp { font-family: var(--mono); }

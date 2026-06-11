@@ -9,7 +9,7 @@ const config: Config = {
         paper: '#ffffff',
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-saans)', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'Menlo', 'monospace'],
       },
       letterSpacing: {
