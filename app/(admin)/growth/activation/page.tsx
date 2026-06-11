@@ -6,6 +6,7 @@ import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
 import { TaperedFunnel } from '@/components/admin/charts/TaperedFunnel'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadActivation } from '@/lib/admin/queries/activation'
 import {
   formatNumber,
@@ -194,6 +195,7 @@ export default async function ActivationPage() {
               }))}
               labelWidth={70}
               height={22}
+              colors={CHART_PALETTE.slice()}
             />
           ) : (
             <Empty />
@@ -211,6 +213,7 @@ export default async function ActivationPage() {
               }))}
               labelWidth={70}
               height={18}
+              colors={CHART_PALETTE.slice()}
             />
           ) : (
             <Empty />

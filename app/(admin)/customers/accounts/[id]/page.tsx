@@ -8,6 +8,7 @@ import { Badge } from '@/components/admin/Badge'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadAccount360 } from '@/lib/admin/queries/accounts'
 import {
   formatCents,
@@ -514,6 +515,7 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
                   },
                 ]}
                 labelWidth={90}
+                colors={CHART_PALETTE.slice()}
               />
             </div>
           </div>

@@ -9,6 +9,7 @@ import { MultiLine } from '@/components/admin/charts/MultiLine'
 import { Donut } from '@/components/admin/charts/Donut'
 import { Gauge } from '@/components/admin/charts/Gauge'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadCommandCenter } from '@/lib/admin/queries/command-center'
 import { loadRevenue } from '@/lib/admin/queries/revenue'
 import { metricByKey } from '@/lib/admin/metrics'
@@ -351,6 +352,7 @@ export default async function CommandCenterPage() {
             bars={waterfall}
             height={180}
             width={680}
+            colors={CHART_PALETTE.slice()}
           />
         </Panel>
       </div>

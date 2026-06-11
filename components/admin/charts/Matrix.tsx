@@ -18,8 +18,14 @@ export type MatrixProps = {
   max?: number
   /** Cell size in px. Default 16. */
   cellSize?: number
-  /** Cell fill color. Intensity via opacity = value/max. Default '#000000'. */
+  /** Single uniform cell fill (legacy). Intensity via opacity = value/max. */
   color?: string
+  /**
+   * Optional per-row base color array. Each row's cells use
+   * `colors[rowIdx % colors.length]` as the fill, with opacity encoding
+   * value/max. Highest priority over `color`.
+   */
+  colors?: string[]
   /** Default true. */
   showRowLabels?: boolean
   /** Default true. */
@@ -57,6 +63,7 @@ export function Matrix({
   max,
   cellSize = 16,
   color = '#000000',
+  colors,
   showRowLabels = true,
   showColLabels = true,
   title,
@@ -88,6 +95,10 @@ export function Matrix({
 
   const totalWidth = labelWidth + gridWidth + (legend ? legendWidth + 12 : 0)
   const totalHeight = colLabelHeight + gridHeight
+
+  const useColors = colors && colors.length > 0
+  const colorForRow = (ri: number): string =>
+    useColors ? colors![ri % colors!.length] : color
 
   return (
     <div className={cn('font-mono', className)} style={{ width: totalWidth }}>
@@ -168,7 +179,10 @@ export function Matrix({
             const intensity = clamp01(v / safeMax)
             const isHovered =
               hovered !== null && hovered.r === ri && hovered.c === ci
+            const cellColor = colorForRow(ri)
             // Highlight: for filled darker cells use white inset, for zero/light cells use black 0.8.
+            // In palette-color mode the cell is rarely "dark" in the grayscale sense; pick
+            // contrast based on intensity threshold of 0.55.
             const useWhite = !isZero && intensity >= 0.55
             const hoverStroke = isHovered
               ? useWhite
@@ -190,7 +204,7 @@ export function Matrix({
                 y={y}
                 width={cellSize}
                 height={cellSize}
-                fill={isZero ? 'none' : color}
+                fill={isZero ? 'none' : cellColor}
                 fillOpacity={isZero ? 0 : intensity}
                 stroke={hoverStroke}
                 strokeOpacity={hoverStrokeOpacity}
@@ -233,6 +247,9 @@ export function Matrix({
                 stop === 0
                   ? '0'
                   : Math.round(stop * safeMax).toLocaleString('en-US')
+              // For the legend, use the first palette color in color mode so
+              // the gradient stays consistent with the multicolor rows.
+              const legendColor = useColors ? colors![0] : color
               return (
                 <g key={`legend-${i}`}>
                   <rect
@@ -240,7 +257,7 @@ export function Matrix({
                     y={y}
                     width={swatchSize}
                     height={swatchSize}
-                    fill={stop === 0 ? 'none' : color}
+                    fill={stop === 0 ? 'none' : legendColor}
                     fillOpacity={stop === 0 ? 0 : stop}
                     stroke={stop === 0 ? '#000' : 'none'}
                     strokeOpacity={stop === 0 ? 0.05 : 0}

@@ -603,6 +603,7 @@ export default async function PipelinePage() {
               values={matrixValues}
               max={100}
               cellSize={20}
+              colors={CHART_PALETTE.slice()}
               legend
             />
           </div>

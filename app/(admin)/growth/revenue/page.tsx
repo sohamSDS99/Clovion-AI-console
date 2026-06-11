@@ -8,6 +8,7 @@ import { Empty } from '@/components/admin/Empty'
 import { AreaChart } from '@/components/admin/charts/AreaChart'
 import { Donut } from '@/components/admin/charts/Donut'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadRevenue } from '@/lib/admin/queries/revenue'
 import { metricByKey } from '@/lib/admin/metrics'
 import {
@@ -424,6 +425,7 @@ export default async function RevenuePage() {
             bars={waterfallBars}
             height={200}
             width={720}
+            colors={CHART_PALETTE.slice()}
           />
         </Panel>
         <Panel title="ARPA / BY TIER" meta="ACTIVE">
@@ -437,6 +439,7 @@ export default async function RevenuePage() {
                 value: t.arpa,
                 display: `${formatCents(t.arpa)} · ${t.accounts}`,
               }))}
+              colors={CHART_PALETTE.slice()}
             />
           )}
         </Panel>

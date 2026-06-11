@@ -12,7 +12,7 @@ import {
   formatPercent,
   formatDuration,
 } from '@/lib/admin/format'
-import { paletteAt } from '@/lib/admin/palette'
+import { CHART_PALETTE, paletteAt } from '@/lib/admin/palette'
 
 const m = pageMeta['/platform/support']!
 
@@ -171,6 +171,7 @@ export default async function SupportPage() {
                 display: formatNumber(b.count),
               }))}
               labelWidth={70}
+              colors={CHART_PALETTE.slice()}
             />
           )}
         </Panel>
@@ -186,6 +187,7 @@ export default async function SupportPage() {
                 display: formatNumber(b.count),
               }))}
               labelWidth={80}
+              colors={CHART_PALETTE.slice()}
             />
           )}
         </Panel>
@@ -234,6 +236,7 @@ export default async function SupportPage() {
                 },
               ]}
               labelWidth={130}
+              colors={CHART_PALETTE.slice()}
             />
             <div className="border-t border-black/10 mt-1 pt-2 flex items-center justify-between">
               <span className="text-[9.5px] font-mono uppercase tracking-[0.12em] text-black/55">

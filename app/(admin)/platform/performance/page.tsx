@@ -15,7 +15,7 @@ import {
   formatBenchmark,
 } from '@/lib/admin/format'
 import { metricByKey } from '@/lib/admin/metrics'
-import { paletteAt } from '@/lib/admin/palette'
+import { CHART_PALETTE, paletteAt } from '@/lib/admin/palette'
 
 const m = pageMeta['/platform/performance']!
 
@@ -336,6 +336,7 @@ export default async function PerformancePage() {
               },
             ]}
             labelWidth={100}
+            colors={CHART_PALETTE.slice()}
           />
         </Panel>
 

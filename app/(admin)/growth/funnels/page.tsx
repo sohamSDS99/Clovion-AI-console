@@ -9,7 +9,7 @@ import { TaperedFunnel } from '@/components/admin/charts/TaperedFunnel'
 import { pageMeta } from '@/lib/admin/content'
 import { loadFunnelList, loadFunnel } from '@/lib/admin/queries/funnels'
 import { formatNumber, formatPercent } from '@/lib/admin/format'
-import { paletteAt } from '@/lib/admin/palette'
+import { CHART_PALETTE, paletteAt } from '@/lib/admin/palette'
 
 const m = pageMeta['/growth/funnels']!
 
@@ -155,12 +155,11 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
             <Empty />
           </Panel>
         ) : (
-          list.map((f, idx) => (
+          list.map((f) => (
             <FunnelCard
               key={f.funnelId}
               funnelId={f.funnelId}
               def={f}
-              color={paletteAt(idx)}
             />
           ))
         )}
@@ -172,7 +171,6 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
 async function FunnelCard({
   funnelId,
   def,
-  color,
 }: {
   funnelId: string
   def: {
@@ -184,7 +182,6 @@ async function FunnelCard({
     active: boolean
     version: number
   }
-  color: string
 }) {
   const detail = await loadFunnel(funnelId)
 
@@ -224,7 +221,12 @@ async function FunnelCard({
           <span>{def.name}</span>
         </div>
         {stepBars.length ? (
-          <Bars rows={stepBars} labelWidth={180} height={16} color={color} />
+          <Bars
+            rows={stepBars}
+            labelWidth={180}
+            height={16}
+            colors={CHART_PALETTE.slice()}
+          />
         ) : (
           <Empty />
         )}

@@ -13,6 +13,7 @@ import { loadBehavior } from '@/lib/admin/queries/behavior'
 import { paletteFor } from '@/lib/admin/queries/behavior'
 import type { FeatureRow, LifecycleStage } from '@/lib/admin/queries/behavior'
 import { formatNumber, formatPercent } from '@/lib/admin/format'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import type { ColumnDef } from '@/components/admin/DataTable'
 import type { BadgeVariant } from '@/components/admin/Badge'
 
@@ -214,7 +215,6 @@ export default async function BehaviorPage() {
               </div>
               <TaperedFunnel
                 steps={f.funnelSteps}
-                color={paletteFor(f.key)}
                 width={220}
                 stepHeight={28}
               />
@@ -235,6 +235,7 @@ export default async function BehaviorPage() {
             values={allFeaturesIntensityMatrix.values}
             max={allFeaturesIntensityMatrix.max}
             cellSize={14}
+            colors={CHART_PALETTE.slice()}
             legend
           />
         ) : (

@@ -11,6 +11,7 @@ import { StackedBars } from '@/components/admin/charts/StackedBars'
 import { Calendar } from '@/components/admin/charts/Calendar'
 import { Matrix } from '@/components/admin/charts/Matrix'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadEngagement } from '@/lib/admin/queries/engagement'
 import { metricByKey } from '@/lib/admin/metrics'
 import {
@@ -280,6 +281,7 @@ export default async function EngagementPage() {
               cols={featureMatrix.days}
               values={featureMatrix.values}
               cellSize={14}
+              colors={CHART_PALETTE.slice()}
               legend
             />
           </div>
@@ -308,14 +310,14 @@ export default async function EngagementPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <Panel title="ENG.L7 · POWER CURVE" meta="MAU × DAYS ACTIVE">
           {l7Rows.length ? (
-            <Bars rows={l7Rows} labelWidth={64} height={20} />
+            <Bars rows={l7Rows} labelWidth={64} height={20} colors={CHART_PALETTE.slice()} />
           ) : (
             <Empty />
           )}
         </Panel>
         <Panel title="ENG.L28 · POWER CURVE" meta="MAU × DAYS ACTIVE">
           {l28Rows.length ? (
-            <Bars rows={l28Rows} labelWidth={40} height={14} />
+            <Bars rows={l28Rows} labelWidth={40} height={14} colors={CHART_PALETTE.slice()} />
           ) : (
             <Empty />
           )}
@@ -334,6 +336,7 @@ export default async function EngagementPage() {
             planLabel(p as 'free' | 'starter' | 'growth' | 'enterprise'),
           )}
           max={100}
+          colors={CHART_PALETTE.slice()}
         />
       </Panel>
 

@@ -310,6 +310,7 @@ export default async function RetentionPage() {
             rowLabels={heatmapRows}
             colLabels={heatmapCols}
             max={100}
+            colors={CHART_PALETTE.slice()}
           />
         ) : (
           <Empty />

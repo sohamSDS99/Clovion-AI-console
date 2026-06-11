@@ -19,6 +19,13 @@ export type WaterfallProps = {
   width?: number
   /** Formatter for the value labels above bars (raw value). */
   format?: (v: number) => string
+  /**
+   * Optional per-bar color array. When set, each bar's fill (for filled
+   * variants) or stroke (for outlined negatives) is indexed from this array.
+   * The outlined-vs-solid semantic is preserved so users still distinguish
+   * negative contributions.
+   */
+  colors?: string[]
   className?: string
 }
 
@@ -27,6 +34,7 @@ export function Waterfall({
   height = 160,
   width = 640,
   format = (v) => v.toLocaleString('en-US'),
+  colors,
   className,
 }: WaterfallProps) {
   const { state, show, move, hide } = useTooltip()
@@ -101,6 +109,11 @@ export function Waterfall({
 
   const zeroY = yOf(0)
 
+  // Resolve per-bar color. Default black (legacy) when `colors` is absent.
+  const useColors = colors && colors.length > 0
+  const colorAt = (i: number): string =>
+    useColors ? colors![i % colors!.length] : '#000'
+
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
       <svg
@@ -143,10 +156,18 @@ export function Waterfall({
             { label: 'RUNNING', value: format(s.running) },
           ]
 
-          // Inset stroke: black on filled bars, white on outlined-negative bars.
-          const insetStrokeColor = isFilled ? '#000' : '#fff'
-          // For outlined-negative we use white inset; render an inset stroke via
-          // an inner rect.
+          // Per-bar palette color (or black fallback).
+          const barColor = colorAt(i)
+          // Fill: filled variants use the bar color; outlined negatives stay
+          // hollow with a subtle wash so the outlined-negative semantic remains.
+          const fill = isFilled ? barColor : 'rgba(0,0,0,0.05)'
+          // Stroke encodes the negative semantic when not filled. Use the
+          // palette color so the bar still picks up its hue.
+          const stroke = isFilled ? barColor : barColor
+          // Inset stroke (hover). Filled cells use a white inset; outlined
+          // cells use a white inset only when the underlying fill is dark
+          // enough; otherwise black-ish.
+          const insetStrokeColor = isFilled ? '#fff' : '#000'
 
           return (
             <g key={`${s.label}-${i}`}>
@@ -169,8 +190,8 @@ export function Waterfall({
                 y={top}
                 width={barW}
                 height={h}
-                fill={isFilled ? '#000' : 'rgba(0,0,0,0.08)'}
-                stroke="#000"
+                fill={fill}
+                stroke={stroke}
                 strokeWidth={1}
                 style={{ cursor: 'pointer' }}
                 onPointerEnter={(e) => {

@@ -8,6 +8,7 @@ import { Empty } from '@/components/admin/Empty'
 import { Donut } from '@/components/admin/charts/Donut'
 import { StackedBars } from '@/components/admin/charts/StackedBars'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadAcquisition } from '@/lib/admin/queries/acquisition'
 import { metricByKey } from '@/lib/admin/metrics'
 import {
@@ -378,6 +379,7 @@ export default async function AcquisitionPage() {
             }))}
             labelWidth={80}
             height={20}
+            colors={CHART_PALETTE.slice()}
           />
         ) : (
           <Empty />

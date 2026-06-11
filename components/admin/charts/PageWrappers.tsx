@@ -13,16 +13,19 @@ export function WaterfallCents({
   bars,
   height,
   width,
+  colors,
 }: {
   bars: WaterfallBar[]
   height?: number
   width?: number
+  colors?: string[]
 }) {
   return (
     <Waterfall
       bars={bars}
       height={height}
       width={width}
+      colors={colors}
       format={(v) => formatCents(v, 0)}
     />
   )
@@ -33,11 +36,13 @@ export function HeatmapPercent({
   rowLabels,
   colLabels,
   max,
+  colors,
 }: {
   grid: number[][]
   rowLabels: string[]
   colLabels: string[]
   max?: number
+  colors?: string[]
 }) {
   return (
     <Heatmap
@@ -45,6 +50,7 @@ export function HeatmapPercent({
       rowLabels={rowLabels}
       colLabels={colLabels}
       max={max}
+      colors={colors}
       format={(v) => `${v}%`}
     />
   )
@@ -55,11 +61,13 @@ export function HeatmapInteger({
   rowLabels,
   colLabels,
   max,
+  colors,
 }: {
   grid: number[][]
   rowLabels: string[]
   colLabels: string[]
   max?: number
+  colors?: string[]
 }) {
   return (
     <Heatmap
@@ -67,6 +75,7 @@ export function HeatmapInteger({
       rowLabels={rowLabels}
       colLabels={colLabels}
       max={max}
+      colors={colors}
       format={(v) => (v > 0 ? `${v.toFixed(0)}` : '')}
     />
   )
