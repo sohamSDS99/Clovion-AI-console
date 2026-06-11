@@ -30,9 +30,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# database
+# database (SQLite — keep schema/migrations under source control, NOT the binary db file)
 /data/*.db
 /data/*.db-journal
+/data/*.db-shm
+/data/*.db-wal
 
 # editor
 .vscode/

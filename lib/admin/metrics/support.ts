@@ -1,0 +1,58 @@
+import type { MetricDef } from './index'
+
+export const SUPPORT_METRICS: MetricDef[] = [
+  {
+    key: 'sup.tickets',
+    owner: 'support',
+    unit: 'count',
+    grain: 'daily',
+    description: 'New tickets/day by priority and tag; tickets per 100 active accounts.',
+    version: 1,
+    domain: 'support',
+  },
+  {
+    key: 'sup.frt',
+    owner: 'support',
+    unit: 'duration_h',
+    grain: 'daily',
+    description: 'Median minutes to first staff response.',
+    version: 1,
+    domain: 'support',
+  },
+  {
+    key: 'sup.resolution',
+    owner: 'support',
+    unit: 'duration_h',
+    grain: 'daily',
+    description: 'Median hours open → resolved.',
+    version: 1,
+    domain: 'support',
+  },
+  {
+    key: 'sup.backlog',
+    owner: 'support',
+    unit: 'count',
+    grain: 'daily',
+    description: 'Open tickets by age bucket.',
+    version: 1,
+    domain: 'support',
+  },
+  {
+    key: 'sup.csat',
+    owner: 'support',
+    unit: 'pct',
+    grain: 'monthly',
+    description: 'Satisfied (4-5/5) ÷ responses, per ticket survey.',
+    version: 1,
+    domain: 'support',
+  },
+  {
+    key: 'sup.nps',
+    owner: 'owner',
+    unit: 'score',
+    grain: 'monthly',
+    description: '% promoters (9-10) − % detractors (0-6), −100..+100.',
+    version: 1,
+    domain: 'support',
+  },
+]

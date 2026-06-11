@@ -1,0 +1,58 @@
+import type { MetricDef } from './index'
+
+export const ACTIVATION_METRICS: MetricDef[] = [
+  {
+    key: 'act.rate',
+    owner: 'admin',
+    unit: 'pct',
+    grain: 'weekly',
+    description: 'Accounts completing account_activated_v1 within 7d ÷ signup-cohort accounts.',
+    version: 1,
+    domain: 'activation',
+  },
+  {
+    key: 'act.step_cvr',
+    owner: 'admin',
+    unit: 'pct',
+    grain: 'daily',
+    description: 'Per funnel step: completed ÷ entered.',
+    version: 1,
+    domain: 'activation',
+  },
+  {
+    key: 'act.ttv',
+    owner: 'admin',
+    unit: 'duration_h',
+    grain: 'daily',
+    description: 'Hours from user_signed_up to first successful prompt_run_completed.',
+    version: 1,
+    domain: 'activation',
+  },
+  {
+    key: 'act.setup',
+    owner: 'admin',
+    unit: 'pct',
+    grain: 'daily',
+    description: '% of new accounts with ≥1 engine_connected within 72h.',
+    version: 1,
+    domain: 'activation',
+  },
+  {
+    key: 'act.first_run',
+    owner: 'engineer',
+    unit: 'pct',
+    grain: 'daily',
+    description: 'First scheduled prompt-run per account succeeding ÷ attempted.',
+    version: 1,
+    domain: 'activation',
+  },
+  {
+    key: 'act.onboarding_steps',
+    owner: 'admin',
+    unit: 'pct',
+    grain: 'daily',
+    description: 'Completion % per onboarding_step_completed.step_key.',
+    version: 1,
+    domain: 'activation',
+  },
+]
