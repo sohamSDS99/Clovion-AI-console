@@ -15,6 +15,7 @@ export const sidebar: NavItem[] = [
   { n: 4, code: 'CST', label: 'Customers', href: '/customers' },
   { n: 5, code: 'OPS', label: 'Operate', href: '/operate' },
   { n: 6, code: 'GOV', label: 'Govern', href: '/govern' },
+  { n: 7, code: 'CHN', label: 'Channels', href: '/channels' },
 ]
 
 export type CategoryTab = { code: string; label: string; href: string }
