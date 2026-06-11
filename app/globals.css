@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #000000;
+  --paper: #ffffff;
+  --line: rgba(0, 0, 0, 0.10);
+  --line-soft: rgba(0, 0, 0, 0.05);
+  --line-strong: rgba(0, 0, 0, 0.22);
+  --mute: rgba(0, 0, 0, 0.45);
+  --mute-2: rgba(0, 0, 0, 0.65);
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+* { border-radius: 0 !important; }
+*, *::before, *::after { transition: none !important; animation: none !important; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.45;
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono, .mono, code, kbd, pre, samp { font-family: var(--mono); }
+
+::selection { background: var(--ink); color: var(--paper); }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+/* Hide chrome scrollbars in dense sidebars */
+.scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--line-strong); }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }

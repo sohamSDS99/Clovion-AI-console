@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "console",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd '/Users/sohamsarker/Clovion AI/site' && npm run dev"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
