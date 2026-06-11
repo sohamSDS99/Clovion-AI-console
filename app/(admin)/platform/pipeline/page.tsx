@@ -6,10 +6,16 @@ import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
 import { RadialBars } from '@/components/admin/charts/RadialBars'
 import { AreaChart } from '@/components/admin/charts/AreaChart'
+import { Matrix } from '@/components/admin/charts/Matrix'
 import { pageMeta } from '@/lib/admin/content'
 import { loadPipeline } from '@/lib/admin/queries/pipeline'
 import { db } from '@/lib/db'
-import { llmCostLedger, accounts, subscriptions } from '@/lib/db/schema'
+import {
+  llmCostLedger,
+  accounts,
+  subscriptions,
+  pipelineRuns,
+} from '@/lib/db/schema'
 import { sql, desc, eq, gte } from 'drizzle-orm'
 import {
   formatCents,
@@ -197,6 +203,19 @@ const CHART_PALETTE = [
   'var(--chart-8)',
 ]
 
+// Canonical engine list (rows of the health matrix). Mirrors EngineKey enum.
+// `google_aio` is the schema key — surfaced to the UI as "AI OVERVIEWS".
+const ENGINE_ROWS: Array<{ key: EngineKey; label: string }> = [
+  { key: 'chatgpt', label: 'CHATGPT' },
+  { key: 'perplexity', label: 'PERPLEXITY' },
+  { key: 'gemini', label: 'GEMINI' },
+  { key: 'google_aio', label: 'AI OVERVIEWS' },
+  { key: 'copilot', label: 'COPILOT' },
+  { key: 'claude', label: 'CLAUDE' },
+]
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
 export default async function PipelinePage() {
   const data = await loadPipeline()
 
@@ -375,6 +394,78 @@ export default async function PipelinePage() {
     s.values.some((v) => v > 0),
   )
 
+  // --- ENGINE × DAY · 7D HEALTH MATRIX -------------------------------------
+  // Anchor on the most recent pipeline run (seeded timestamps may pre-date now).
+  const latestRun = db
+    .select({ ts: pipelineRuns.scheduledFor })
+    .from(pipelineRuns)
+    .orderBy(desc(pipelineRuns.scheduledFor))
+    .limit(1)
+    .all()[0]
+  const matrixAnchorMs = latestRun
+    ? (latestRun.ts instanceof Date
+        ? latestRun.ts.getTime()
+        : Number(latestRun.ts))
+    : Date.now()
+  const matrixAnchorDay = new Date(matrixAnchorMs)
+  const matrixAnchorUtc = Date.UTC(
+    matrixAnchorDay.getUTCFullYear(),
+    matrixAnchorDay.getUTCMonth(),
+    matrixAnchorDay.getUTCDate(),
+  )
+  const matrixStartMs = matrixAnchorUtc - 6 * DAY_MS
+
+  const matrixDays: Array<{ key: string; label: string }> = []
+  for (let i = 0; i < 7; i++) {
+    const t = matrixStartMs + i * DAY_MS
+    const d = new Date(t)
+    const k = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+    const lbl = `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}`
+    matrixDays.push({ key: k, label: lbl })
+  }
+
+  // Aggregate pipeline_runs in the 7-day window: total + success per engine/day.
+  type EngineDayAgg = { engine: string; day: string; total: number; success: number }
+  const matrixRunsRows = db
+    .select({
+      engine: pipelineRuns.engine,
+      scheduledFor: pipelineRuns.scheduledFor,
+      status: pipelineRuns.status,
+    })
+    .from(pipelineRuns)
+    .where(gte(pipelineRuns.scheduledFor, new Date(matrixStartMs)))
+    .all()
+
+  const aggMap = new Map<string, EngineDayAgg>()
+  for (const row of matrixRunsRows) {
+    const t = row.scheduledFor instanceof Date ? row.scheduledFor.getTime() : Number(row.scheduledFor)
+    const dayIdx = Math.floor((t - matrixStartMs) / DAY_MS)
+    if (dayIdx < 0 || dayIdx >= matrixDays.length) continue
+    const dayKey = matrixDays[dayIdx].key
+    const engKey = row.engine as string
+    const key = `${engKey}|${dayKey}`
+    const cur = aggMap.get(key) ?? { engine: engKey, day: dayKey, total: 0, success: 0 }
+    cur.total += 1
+    if (row.status === 'success') cur.success += 1
+    aggMap.set(key, cur)
+  }
+
+  const matrixValues = Array.from(aggMap.values())
+    .filter((v) => v.total > 0)
+    .map((v) => ({
+      row: v.engine,
+      col: v.day,
+      // Success rate scaled to 0..100 for intensity ramp.
+      value: Math.round((v.success / v.total) * 100),
+    }))
+
+  const matrixFeatures = ENGINE_ROWS.map((e) => ({
+    key: e.key as string,
+    label: e.label,
+  }))
+
+  const matrixHasData = matrixValues.some((v) => v.value > 0)
+
   return (
     <>
       <PageHeader section={m.section} label={m.label} meta="LAST 24H" />
@@ -504,6 +595,27 @@ export default async function PipelinePage() {
           )}
         </Panel>
       </div>
+
+      <Panel
+        title="ENGINE × DAY · LAST 7D HEALTH"
+        meta="SUCCESS RATE %"
+        className="mb-3"
+      >
+        {matrixHasData ? (
+          <div className="overflow-x-auto">
+            <Matrix
+              rows={matrixFeatures}
+              cols={matrixDays}
+              values={matrixValues}
+              max={100}
+              cellSize={20}
+              legend
+            />
+          </div>
+        ) : (
+          <Empty />
+        )}
+      </Panel>
 
       <Panel title="ENGINE / STATUS BOARD" meta={`${data.engines.length} ENGINES`} className="mb-3">
         {engineRows.length === 0 ? (

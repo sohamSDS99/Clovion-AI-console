@@ -5,6 +5,7 @@ import { Funnel } from '@/components/admin/Funnel'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
 import { Badge } from '@/components/admin/Badge'
+import { TaperedFunnel } from '@/components/admin/charts/TaperedFunnel'
 import { pageMeta } from '@/lib/admin/content'
 import { loadFunnelList, loadFunnel } from '@/lib/admin/queries/funnels'
 import { formatNumber, formatPercent } from '@/lib/admin/format'
@@ -24,6 +25,13 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
   const activeFunnels = list.filter((f) => f.active).length
   const accountScoped = list.filter((f) => f.scope === 'account').length
   const userScoped = list.filter((f) => f.scope === 'user').length
+
+  // Primary funnel — first in the list (alphabetical). The first card pairs the
+  // bars view with a TaperedFunnel; subsequent cards keep bars only.
+  const primaryFunnel = list[0]
+  const primaryDetail = primaryFunnel
+    ? await loadFunnel(primaryFunnel.funnelId)
+    : null
 
   return (
     <>
@@ -93,6 +101,49 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
           ) : (
             <Empty />
           )}
+        </Panel>
+      ) : null}
+
+      {primaryFunnel && primaryDetail && primaryDetail.stepResults.length > 0 ? (
+        <Panel
+          title={`PRIMARY · ${primaryFunnel.funnelId.toUpperCase()}`}
+          meta={`${primaryFunnel.scope.toUpperCase()} · ${primaryFunnel.windowHours}H · BARS + TAPERED`}
+          className="mb-4"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <div className="text-[9.5px] font-mono uppercase tracking-[0.12em] text-black/55">
+                BARS
+              </div>
+              <Bars
+                rows={primaryDetail.stepResults.map((s) => ({
+                  label: s.step.replace(/_/g, ' '),
+                  value: s.entered,
+                  display: `${formatNumber(s.entered)}→${formatNumber(
+                    s.completed,
+                  )} · ${formatPercent(s.conversionPct, undefined, 1)}`,
+                }))}
+                labelWidth={180}
+                height={16}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="text-[9.5px] font-mono uppercase tracking-[0.12em] text-black/55">
+                TAPERED
+              </div>
+              <div className="overflow-x-auto">
+                <TaperedFunnel
+                  steps={primaryDetail.stepResults.map((s) => ({
+                    name: s.step.replace(/_/g, ' '),
+                    entered: s.entered,
+                    completed: s.completed,
+                  }))}
+                  width={420}
+                  stepHeight={48}
+                />
+              </div>
+            </div>
+          </div>
         </Panel>
       ) : null}
 

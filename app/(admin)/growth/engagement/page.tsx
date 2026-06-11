@@ -9,6 +9,7 @@ import { Empty } from '@/components/admin/Empty'
 import { Badge } from '@/components/admin/Badge'
 import { StackedBars } from '@/components/admin/charts/StackedBars'
 import { Calendar } from '@/components/admin/charts/Calendar'
+import { Matrix } from '@/components/admin/charts/Matrix'
 import { pageMeta } from '@/lib/admin/content'
 import { loadEngagement } from '@/lib/admin/queries/engagement'
 import { metricByKey } from '@/lib/admin/metrics'
@@ -184,6 +185,10 @@ export default async function EngagementPage() {
     },
   ]
 
+  // Feature × Day matrix values for the new Matrix panel.
+  const featureMatrix = data.featureDayMatrix
+  const matrixHasData = featureMatrix.values.some((v) => v.value > 0)
+
   return (
     <>
       <PageHeader section={m.section} label={m.label} meta="LAST 28D" />
@@ -258,6 +263,26 @@ export default async function EngagementPage() {
             rowHeight={16}
             labelWidth={56}
           />
+        ) : (
+          <Empty />
+        )}
+      </Panel>
+
+      <Panel
+        title="FEATURE × DAY · 28D"
+        meta={`${featureMatrix.features.length} FEATURES · ${featureMatrix.days.length} DAYS`}
+        className="mb-4"
+      >
+        {matrixHasData ? (
+          <div className="overflow-x-auto">
+            <Matrix
+              rows={featureMatrix.features}
+              cols={featureMatrix.days}
+              values={featureMatrix.values}
+              cellSize={14}
+              legend
+            />
+          </div>
         ) : (
           <Empty />
         )}

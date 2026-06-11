@@ -27,6 +27,7 @@ export const pageMeta: Record<string, PageMeta> = {
   '/govern/gdpr': { section: 'GOVERN', label: 'GDPR Requests' },
   '/govern/settings': { section: 'GOVERN', label: 'Settings' },
   '/channels': { section: '', label: 'Channels', meta: 'last 28d' },
+  '/behavior': { section: '', label: 'Behavior', meta: 'last 28d' },
 }
 
 export function metaFor(pathname: string): PageMeta {

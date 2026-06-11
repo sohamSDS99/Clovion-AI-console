@@ -4,6 +4,7 @@ import { Panel } from '@/components/admin/Panel'
 import { Bars } from '@/components/admin/Bars'
 import { Sparkline } from '@/components/admin/Sparkline'
 import { Empty } from '@/components/admin/Empty'
+import { Gauge } from '@/components/admin/charts/Gauge'
 import { pageMeta } from '@/lib/admin/content'
 import { loadPerformance } from '@/lib/admin/queries/performance'
 import {
@@ -71,9 +72,41 @@ export default async function PerformancePage() {
   const errorBudget = 0.001
   const burn = errorBudget > 0 ? (1 - d.sloAvailability28d) / errorBudget : 0
 
+  // --- SLO gauges -----------------------------------------------------------
+  // Uptime SLO over last 7d (vs 99.9% target).
+  const uptime7d = avg(d.uptimeSeries, 7)
+  // API p95 SLO: budget remaining = max(0, 1 - currentP95 / target). Target = 500ms (standard).
+  const apiP95Ms = Math.round(p95Now)
+  const apiP95Target = 500
+  const apiP95Budget = Math.max(0, Math.min(1, 1 - apiP95Ms / apiP95Target))
+
   return (
     <>
       <PageHeader section={m.section} label={m.label} meta="LAST 28D · 4 GOLDEN SIGNALS" />
+
+      {/* SLOs — added above existing content */}
+      <Panel title="SLOS" meta="ROLLING TARGETS" className="mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center">
+          <Gauge
+            label="UPTIME SLO"
+            value={uptime7d}
+            max={1}
+            target={0.999}
+            valueLabel={`${(uptime7d * 100).toFixed(2)}%`}
+            metaLabel="target 99.9%"
+            color="var(--chart-2)"
+          />
+          <Gauge
+            label="API P95 SLO"
+            value={apiP95Budget}
+            max={1}
+            target={0.95}
+            valueLabel={`${apiP95Ms}ms`}
+            metaLabel="budget remaining"
+            color="var(--chart-1)"
+          />
+        </div>
+      </Panel>
 
       <KpiGrid cols={8} className="mb-3">
         <KpiCard

@@ -7,6 +7,7 @@ import { FreshnessStrip } from '@/components/admin/FreshnessStrip'
 import { Empty } from '@/components/admin/Empty'
 import { MultiLine } from '@/components/admin/charts/MultiLine'
 import { Donut } from '@/components/admin/charts/Donut'
+import { Gauge } from '@/components/admin/charts/Gauge'
 import { pageMeta } from '@/lib/admin/content'
 import { loadCommandCenter } from '@/lib/admin/queries/command-center'
 import { loadRevenue } from '@/lib/admin/queries/revenue'
@@ -198,6 +199,14 @@ export default async function CommandCenterPage() {
   }).filter((s) => s.value > 0)
   const mrrTotal = mrrTierSlices.reduce((s, x) => s + x.value, 0)
 
+  // --- GOALS / SLO GAUGE INPUTS --------------------------------------------
+  // LLM budget gauge — spend vs daily budget, both in *dollars* for display.
+  const spendTodayDollars = data.spendTodayCents / 100
+  const dailyBudgetDollars = data.llmBudgetCents / 100
+  // MRR gauge — convert cents → thousands of dollars.
+  const mrrThousands = data.mrrCents / 100 / 1000
+  const mrrTargetThousands = data.mrrTargetCents / 100 / 1000
+
   return (
     <>
       <PageHeader
@@ -251,6 +260,47 @@ export default async function CommandCenterPage() {
           </div>
         ))}
       </KpiGrid>
+
+      {/* GOALS / SLOs — 4 gauges */}
+      <Panel title="GOALS / SLOS" meta="LIVE TARGETS" className="mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 justify-items-center">
+          <Gauge
+            label="LLM BUDGET"
+            value={spendTodayDollars}
+            max={dailyBudgetDollars}
+            target={dailyBudgetDollars * 0.8}
+            valueLabel={`$${spendTodayDollars.toFixed(0)}`}
+            metaLabel={`${dailyBudgetDollars > 0 ? ((spendTodayDollars / dailyBudgetDollars) * 100).toFixed(0) : 0}% of $${dailyBudgetDollars.toFixed(0)}`}
+            danger
+          />
+          <Gauge
+            label="FRESHNESS SLA"
+            value={data.freshnessPct}
+            max={1}
+            target={0.99}
+            valueLabel={`${(data.freshnessPct * 100).toFixed(1)}%`}
+            metaLabel="target 99%"
+            color="var(--chart-2)"
+          />
+          <Gauge
+            label="ERROR BUDGET"
+            value={data.errorBudgetRemaining}
+            max={1}
+            target={0.5}
+            valueLabel={`${(data.errorBudgetRemaining * 100).toFixed(0)}%`}
+            metaLabel="28d rolling"
+            color="var(--chart-3)"
+          />
+          <Gauge
+            label="MRR / TARGET"
+            value={data.mrrCents}
+            max={data.mrrTargetCents}
+            valueLabel={`$${mrrThousands.toFixed(0)}K`}
+            metaLabel={`target $${mrrTargetThousands.toFixed(0)}K`}
+            color="var(--chart-5)"
+          />
+        </div>
+      </Panel>
 
       {/* TREND 60D + MRR BY TIER */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mb-3">

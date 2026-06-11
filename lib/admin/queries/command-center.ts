@@ -42,6 +42,16 @@ export type CommandCenterData = {
   llmBudgetCents: number
   trend60d: TrendSeries
   mrrByTier: MrrByTier
+  /** Today's LLM spend in cents — read from latest ai.spend rollup. */
+  spendTodayCents: number
+  /** Share of sync_watermarks sources within SLA threshold (0..1). */
+  freshnessPct: number
+  /** Error budget remaining over 28d (0..1) based on perf.error_rate. */
+  errorBudgetRemaining: number
+  /** Total active MRR in cents (sum across tiers). */
+  mrrCents: number
+  /** Placeholder MRR target — 1.2x current MRR (quarterly stretch). */
+  mrrTargetCents: number
 }
 
 async function latest(key: string): Promise<KpiTile | null> {
@@ -149,6 +159,34 @@ export async function loadCommandCenter(): Promise<CommandCenterData> {
     accounts: Number(t.n),
   }))
 
+  // --- GOALS / SLO INPUTS ---------------------------------------------------
+  // Today's spend: ai.spend rollup is stored in microcents (PRD §A.8 — llm_cost_ledger
+  // uses cost_usd_microcents). Convert microcents → cents = ÷ 10,000.
+  const spendToday = await latest('ai.spend')
+  const spendTodayCents = spendToday ? Math.round(spendToday.value / 10_000) : 0
+
+  // Freshness pct = share of sources within their SLA threshold.
+  const freshnessPct =
+    freshness.length > 0
+      ? freshness.filter((f) => f.state === 'solid' || f.state === 'half').length /
+        freshness.length
+      : 1
+
+  // Error budget remaining over 28d: error_rate target = 0.1% (0.001). burn = avg_err / 0.001.
+  // remaining = max(0, 1 - burn / 1.0) — we clamp to [0,1].
+  const errRows = loadSeries('perf.error_rate', 28)
+  const avgErr =
+    errRows.length > 0
+      ? errRows.reduce((s, p) => s + p.value, 0) / errRows.length
+      : 0
+  const errorBudgetTarget = 0.001
+  const burnRatio = errorBudgetTarget > 0 ? avgErr / errorBudgetTarget : 0
+  const errorBudgetRemaining = Math.max(0, Math.min(1, 1 - burnRatio))
+
+  // MRR + 20% stretch target (placeholder quarterly goal).
+  const mrrCents = mrrByTier.reduce((s, t) => s + t.mrr, 0)
+  const mrrTargetCents = Math.max(1, Math.round(mrrCents * 1.2))
+
   return {
     anchors,
     tiles,
@@ -157,5 +195,10 @@ export async function loadCommandCenter(): Promise<CommandCenterData> {
     llmBudgetCents,
     trend60d,
     mrrByTier,
+    spendTodayCents,
+    freshnessPct,
+    errorBudgetRemaining,
+    mrrCents,
+    mrrTargetCents,
   }
 }

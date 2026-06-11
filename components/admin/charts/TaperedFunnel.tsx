@@ -1,0 +1,215 @@
+import { cn } from '@/lib/cn'
+import { Empty } from '@/components/admin/Empty'
+
+export type TaperedFunnelStep = {
+  name: string
+  entered: number
+  completed: number
+  medianHoursToStep?: number
+}
+
+export type TaperedFunnelProps = {
+  steps: TaperedFunnelStep[]
+  width?: number
+  stepHeight?: number
+  color?: string
+  className?: string
+}
+
+function formatHours(hours: number): string {
+  if (!Number.isFinite(hours) || hours <= 0) return '0h'
+  if (hours < 24) return `${hours.toFixed(hours < 10 ? 1 : 0).replace(/\.0$/, '')}h`
+  const days = hours / 24
+  return `${days.toFixed(days < 10 ? 1 : 0).replace(/\.0$/, '')}d`
+}
+
+function formatNumber(n: number): string {
+  return n.toLocaleString('en-US')
+}
+
+export function TaperedFunnel({
+  steps,
+  width = 640,
+  stepHeight = 56,
+  color = 'var(--chart-1)',
+  className,
+}: TaperedFunnelProps) {
+  if (steps.length === 0) {
+    return <Empty />
+  }
+
+  const first = steps[0]
+  const firstEntered = first.entered > 0 ? first.entered : 1
+
+  // Compute each trapezoid's TOP width (= entered_i / entered_0 * width)
+  // and BOTTOM width (= entered_{i+1} / entered_0 * width) so consecutive
+  // trapezoids share an edge for the funnel taper.
+  const stepWidths = steps.map((s) =>
+    Math.max(0, (s.entered / firstEntered) * width),
+  )
+
+  // Side gutters for outer labels (left = hours, right = conversion + drop).
+  const leftGutter = 64
+  const rightGutter = 140
+  const totalWidth = leftGutter + width + rightGutter
+  const totalHeight = steps.length * stepHeight
+
+  // Build trapezoid polygons + connector lines.
+  // Each step occupies [stepHeight * i, stepHeight * (i+1)] vertically.
+  // Top edge width = stepWidths[i]; bottom edge width tapers toward stepWidths[i+1] (or itself if last).
+  // Horizontal coordinates are offset by leftGutter so the funnel sits inside the gutters.
+
+  return (
+    <div
+      className={cn('font-mono', className)}
+      style={{ width: totalWidth }}
+    >
+      <svg
+        viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+        width={totalWidth}
+        height={totalHeight}
+        aria-label="Funnel chart"
+        role="img"
+      >
+        {steps.map((s, i) => {
+          const topW = stepWidths[i]
+          const bottomW = i < steps.length - 1 ? stepWidths[i + 1] : topW
+          const yTop = i * stepHeight
+          const yBottom = yTop + stepHeight
+
+          const topLeft = leftGutter + (width - topW) / 2
+          const topRight = topLeft + topW
+          const bottomLeft = leftGutter + (width - bottomW) / 2
+          const bottomRight = bottomLeft + bottomW
+
+          const centerX = leftGutter + width / 2
+          const centerY = yTop + stepHeight / 2
+
+          const points = [
+            `${topLeft.toFixed(2)},${yTop.toFixed(2)}`,
+            `${topRight.toFixed(2)},${yTop.toFixed(2)}`,
+            `${bottomRight.toFixed(2)},${yBottom.toFixed(2)}`,
+            `${bottomLeft.toFixed(2)},${yBottom.toFixed(2)}`,
+          ].join(' ')
+
+          // Conversion vs first step (rounded to 1 decimal).
+          const convPct = firstEntered > 0 ? (s.entered / firstEntered) * 100 : 0
+          // Drop from previous step.
+          const drop = i === 0 ? 0 : steps[i - 1].entered - s.entered
+
+          // Connector lines from previous step's bottom corners to this step's top corners.
+          // (Already implicitly continuous since bottomW_{i-1} = topW_i, but we emit a faint
+          // 1px guideline along the funnel edges separating each step.)
+          const dividerY = yTop
+
+          return (
+            <g key={`step-${i}-${s.name}`}>
+              {/* Trapezoid */}
+              <polygon
+                points={points}
+                fill={color}
+                fillOpacity={0.18}
+                stroke="#000"
+                strokeOpacity={0.4}
+                strokeWidth={1}
+              />
+              {/* Thin divider line at the top edge of each step (skip first) */}
+              {i > 0 ? (
+                <line
+                  x1={topLeft.toFixed(2)}
+                  y1={dividerY.toFixed(2)}
+                  x2={topRight.toFixed(2)}
+                  y2={dividerY.toFixed(2)}
+                  stroke="#000"
+                  strokeOpacity={0.15}
+                  strokeWidth={1}
+                />
+              ) : null}
+              {/* Step name (inside, centered top half) */}
+              <text
+                x={centerX}
+                y={centerY - 4}
+                textAnchor="middle"
+                fontSize={11}
+                fontWeight={600}
+                fill="#000"
+                style={{
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  fontFamily: 'var(--sans)',
+                }}
+              >
+                {s.name}
+              </text>
+              {/* Entered count (inside, centered bottom half) */}
+              <text
+                x={centerX}
+                y={centerY + 12}
+                textAnchor="middle"
+                fontSize={12}
+                fontWeight={600}
+                fill="#000"
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {formatNumber(s.entered)}
+              </text>
+              {/* Left gutter: median hours-to-step */}
+              {typeof s.medianHoursToStep === 'number' ? (
+                <text
+                  x={leftGutter - 8}
+                  y={centerY + 3}
+                  textAnchor="end"
+                  fontSize={9.5}
+                  fill="#000"
+                  fillOpacity={0.55}
+                  style={{
+                    fontFamily: 'var(--mono)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {formatHours(s.medianHoursToStep)}
+                </text>
+              ) : null}
+              {/* Right gutter: conversion % (line 1) + drop (line 2) */}
+              <text
+                x={leftGutter + width + 8}
+                y={centerY - 2}
+                textAnchor="start"
+                fontSize={10}
+                fill="#000"
+                fillOpacity={0.75}
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {convPct.toFixed(1)}%
+              </text>
+              {i > 0 ? (
+                <text
+                  x={leftGutter + width + 8}
+                  y={centerY + 11}
+                  textAnchor="start"
+                  fontSize={10}
+                  fill="#000"
+                  fillOpacity={0.45}
+                  style={{
+                    fontFamily: 'var(--mono)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {`Δ -${formatNumber(Math.max(0, drop))} drop`}
+                </text>
+              ) : null}
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+export default TaperedFunnel

@@ -4,6 +4,7 @@ import { KpiCard, KpiGrid } from '@/components/admin/KpiCard'
 import { Funnel } from '@/components/admin/Funnel'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
+import { TaperedFunnel } from '@/components/admin/charts/TaperedFunnel'
 import { pageMeta } from '@/lib/admin/content'
 import { loadActivation } from '@/lib/admin/queries/activation'
 import {
@@ -55,6 +56,14 @@ export default async function ActivationPage() {
   const onboardingComplete = activationRate28 * 0.78
   const workspaceCreated = steps.find((s) => s.step.includes('workspace'))
   const promptCreated = steps.find((s) => s.step.includes('prompt_created'))
+
+  // TaperedFunnel data — mirrors the existing list-style funnel.
+  const taperedSteps = steps.map((s) => ({
+    name: s.step.replace(/_/g, ' '),
+    entered: s.entered,
+    completed: s.completed,
+    medianHoursToStep: s.medianHoursToStep,
+  }))
 
   return (
     <>
@@ -155,6 +164,20 @@ export default async function ActivationPage() {
             }))}
             labelWidth={220}
           />
+        ) : (
+          <Empty />
+        )}
+      </Panel>
+
+      <Panel
+        title="ACT.FUNNEL · TAPERED · ACCOUNT_ACTIVATED_V1"
+        meta="TRAPEZOID DRAW"
+        className="mb-4"
+      >
+        {taperedSteps.length ? (
+          <div className="overflow-x-auto">
+            <TaperedFunnel steps={taperedSteps} width={640} stepHeight={56} />
+          </div>
         ) : (
           <Empty />
         )}
