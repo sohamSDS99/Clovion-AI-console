@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { NAV } from '@/lib/admin/nav'
+import { sidebar } from '@/lib/admin/nav'
 import { cn } from '@/lib/cn'
 
 export type SidebarUser = {
@@ -41,46 +41,39 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
       </div>
 
-      {/* Nav groups */}
+      {/* Nav — 6 flat categories */}
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-2">
-        {NAV.map((group) => (
-          <div key={group.group} className="mb-2">
-            <div className="px-3 py-1 text-[9.5px] font-mono uppercase tracking-[0.16em] text-white/50">
-              {group.group}
-            </div>
-            <ul>
-              {group.items.map((item) => {
-                const active = isActive(pathname, item.href)
-                return (
-                  <li key={`${item.href}-${item.n}`} className="relative">
-                    {active ? (
-                      <span
-                        aria-hidden="true"
-                        className="absolute left-0 top-0 bottom-0 w-[2px] bg-white"
-                      />
-                    ) : null}
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-2 pl-3 pr-3 font-mono text-[11px] leading-none',
-                        active ? 'bg-white/10 text-white' : 'text-white/70',
-                      )}
-                      style={{ height: 28 }}
-                    >
-                      <span className="text-white/40 w-4 tabular-nums">
-                        {String(item.n).padStart(2, '0')}
-                      </span>
-                      <span className="uppercase tracking-[0.06em] w-9 text-white/60">
-                        {item.code}
-                      </span>
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
+        <ul>
+          {sidebar.map((item) => {
+            const active = isActive(pathname, item.href)
+            return (
+              <li key={`${item.href}-${item.n}`} className="relative">
+                {active ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-0 bottom-0 w-[2px] bg-white"
+                  />
+                ) : null}
+                <Link
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-2 pl-3 pr-3 font-mono text-[11px] leading-none',
+                    active ? 'bg-white/10 text-white' : 'text-white/70',
+                  )}
+                  style={{ height: 32 }}
+                >
+                  <span className="text-white/40 w-4 tabular-nums">
+                    {String(item.n).padStart(2, '0')}
+                  </span>
+                  <span className="uppercase tracking-[0.06em] w-9 text-white/60">
+                    {item.code}
+                  </span>
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       </nav>
 
       {/* User footer */}

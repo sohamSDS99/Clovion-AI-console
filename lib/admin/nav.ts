@@ -1,5 +1,5 @@
-// Sidebar navigation registry — 17 modules grouped per PRD §2.2.
-// Three-letter codes keep rows compact for terminal-density rendering.
+// Sidebar navigation registry — 6 top-level categories.
+// Sub-modules render as tabs inside each category dashboard.
 
 export type NavItem = {
   n: number
@@ -8,64 +8,43 @@ export type NavItem = {
   href: string
 }
 
-export type NavGroup = {
-  group: string
-  items: NavItem[]
-}
-
-export const NAV: NavGroup[] = [
-  {
-    group: 'OVERVIEW',
-    items: [{ n: 1, code: 'CMD', label: 'Command', href: '/' }],
-  },
-  {
-    group: 'GROWTH',
-    items: [
-      { n: 2, code: 'ACQ', label: 'Acquisition', href: '/acquisition' },
-      { n: 3, code: 'ACT', label: 'Activation', href: '/activation' },
-      { n: 4, code: 'ENG', label: 'Engagement', href: '/engagement' },
-      { n: 5, code: 'RET', label: 'Retention', href: '/retention' },
-      { n: 6, code: 'REV', label: 'Revenue', href: '/revenue' },
-      { n: 7, code: 'FNL', label: 'Funnels', href: '/funnels' },
-      { n: 8, code: 'JNY', label: 'User Journey', href: '/journey' },
-    ],
-  },
-  {
-    group: 'PLATFORM',
-    items: [
-      { n: 9, code: 'PRF', label: 'Performance', href: '/performance' },
-      { n: 10, code: 'PIP', label: 'Pipeline', href: '/pipeline' },
-      { n: 11, code: 'SUP', label: 'Support', href: '/support' },
-    ],
-  },
-  {
-    group: 'CUSTOMERS',
-    items: [{ n: 12, code: 'ACT', label: 'Accounts', href: '/accounts' }],
-  },
-  {
-    group: 'OPERATE',
-    items: [
-      { n: 13, code: 'OPS', label: 'Operations', href: '/operations' },
-      { n: 14, code: 'FLG', label: 'Flags', href: '/flags' },
-      { n: 15, code: 'ALR', label: 'Alerts', href: '/alerts' },
-    ],
-  },
-  {
-    group: 'GOVERN',
-    items: [
-      { n: 16, code: 'AUD', label: 'Audit', href: '/audit' },
-      { n: 17, code: 'GDP', label: 'GDPR', href: '/gdpr' },
-      { n: 18, code: 'SET', label: 'Settings', href: '/settings' },
-    ],
-  },
+export const sidebar: NavItem[] = [
+  { n: 1, code: 'CMD', label: 'Command', href: '/' },
+  { n: 2, code: 'GRW', label: 'Growth', href: '/growth' },
+  { n: 3, code: 'PLT', label: 'Platform', href: '/platform' },
+  { n: 4, code: 'CST', label: 'Customers', href: '/customers' },
+  { n: 5, code: 'OPS', label: 'Operate', href: '/operate' },
+  { n: 6, code: 'GOV', label: 'Govern', href: '/govern' },
 ]
 
-/** Flat lookup of href -> nav item (used by PageHeader auto-resolution). */
-export const NAV_BY_HREF: Record<string, { group: string; item: NavItem }> =
-  NAV.flatMap((g) => g.items.map((item) => ({ group: g.group, item }))).reduce(
-    (acc, cur) => {
-      acc[cur.item.href] = cur
-      return acc
-    },
-    {} as Record<string, { group: string; item: NavItem }>,
-  )
+export type CategoryTab = { code: string; label: string; href: string }
+
+export const categoryTabs: Record<string, CategoryTab[]> = {
+  growth: [
+    { code: 'ACQ', label: 'Acquisition', href: '/growth/acquisition' },
+    { code: 'ACT', label: 'Activation', href: '/growth/activation' },
+    { code: 'ENG', label: 'Engagement', href: '/growth/engagement' },
+    { code: 'RET', label: 'Retention', href: '/growth/retention' },
+    { code: 'REV', label: 'Revenue', href: '/growth/revenue' },
+    { code: 'FNL', label: 'Funnels', href: '/growth/funnels' },
+    { code: 'JNY', label: 'User Journey', href: '/growth/journey' },
+  ],
+  platform: [
+    { code: 'PRF', label: 'Performance', href: '/platform/performance' },
+    { code: 'PIP', label: 'Pipeline', href: '/platform/pipeline' },
+    { code: 'SUP', label: 'Support', href: '/platform/support' },
+  ],
+  customers: [
+    { code: 'ACT', label: 'Accounts', href: '/customers/accounts' },
+  ],
+  operate: [
+    { code: 'OPS', label: 'Operations', href: '/operate/operations' },
+    { code: 'FLG', label: 'Flags', href: '/operate/flags' },
+    { code: 'ALR', label: 'Alerts', href: '/operate/alerts' },
+  ],
+  govern: [
+    { code: 'AUD', label: 'Audit', href: '/govern/audit' },
+    { code: 'GDP', label: 'GDPR', href: '/govern/gdpr' },
+    { code: 'SET', label: 'Settings', href: '/govern/settings' },
+  ],
+}
