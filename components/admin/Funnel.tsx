@@ -1,4 +1,9 @@
+'use client'
+
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from '@/components/admin/charts/ChartTooltip'
+import { useTooltip } from '@/components/admin/charts/useTooltip'
+import { useState } from 'react'
 
 export type FunnelStep = {
   name: string
@@ -14,7 +19,17 @@ export type FunnelProps = {
   labelWidth?: number
 }
 
+function pct(n: number) {
+  if (!Number.isFinite(n)) return '0%'
+  return `${(n * 100).toFixed(1)}%`
+}
+
+type Row = { label: string; value: string }
+
 export function Funnel({ steps, className, labelWidth = 200 }: FunnelProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+
   if (steps.length === 0) {
     return (
       <div className="border border-dashed border-black/15 py-6 text-center text-[11px] font-mono uppercase tracking-[0.12em] text-black/50">
@@ -29,6 +44,18 @@ export function Funnel({ steps, className, labelWidth = 200 }: FunnelProps) {
       {steps.map((s, i) => {
         const widthPct = Math.max(0, Math.min(1, s.entered / first))
         const conv = s.conversionPct ?? (s.entered > 0 ? (s.completed / s.entered) * 100 : 0)
+        const isHovered = hoverIdx === i
+        const rows: Row[] = [
+          { label: 'ENTERED', value: s.entered.toLocaleString('en-US') },
+          { label: 'COMPLETED', value: s.completed.toLocaleString('en-US') },
+          {
+            label: 'CONVERSION',
+            value: s.entered > 0 ? pct(s.completed / s.entered) : '0%',
+          },
+        ]
+        if (typeof s.medianHoursToStep === 'number') {
+          rows.push({ label: 'MEDIAN TIME', value: `${s.medianHoursToStep}h` })
+        }
         return (
           <div
             key={`${s.name}-${i}`}
@@ -43,10 +70,30 @@ export function Funnel({ steps, className, labelWidth = 200 }: FunnelProps) {
                 {s.name}
               </span>
             </div>
-            <div className="relative bg-black/5" style={{ height: 16 }}>
+            <div
+              className="relative bg-black/5"
+              style={{
+                height: 16,
+                cursor: 'pointer',
+                outline: isHovered ? '1.5px solid rgba(0,0,0,0.8)' : 'none',
+                outlineOffset: 0,
+              }}
+              onPointerEnter={(e) => {
+                setHoverIdx(i)
+                show(e, s.name, rows)
+              }}
+              onPointerMove={(e) => move(e)}
+              onPointerLeave={() => {
+                setHoverIdx((curr) => (curr === i ? null : curr))
+                hide()
+              }}
+            >
               <div
                 className="absolute inset-y-0 left-0 bg-black"
-                style={{ width: `${(widthPct * 100).toFixed(2)}%` }}
+                style={{
+                  width: `${(widthPct * 100).toFixed(2)}%`,
+                  boxShadow: isHovered ? 'inset 0 0 0 1.5px #fff' : 'none',
+                }}
               />
             </div>
             <div className="flex items-center gap-3 text-[10px] font-mono tabular-nums shrink-0">
@@ -65,6 +112,8 @@ export function Funnel({ steps, className, labelWidth = 200 }: FunnelProps) {
           </div>
         )
       })}
+
+      <ChartTooltip state={state} />
     </div>
   )
 }

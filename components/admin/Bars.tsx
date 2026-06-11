@@ -1,4 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import { cn } from '@/lib/cn'
+import { ChartTooltip, type TooltipRow } from './charts/ChartTooltip'
+import { useTooltip } from './charts/useTooltip'
 
 export type BarRow = {
   label: string
@@ -18,6 +23,11 @@ export type BarsProps = {
   format?: (v: number) => string
 }
 
+function pct(t: number): string {
+  const v = Math.max(0, Math.min(1, t))
+  return `${Math.round(v * 100)}%`
+}
+
 export function Bars({
   rows,
   height = 20,
@@ -29,10 +39,18 @@ export function Bars({
   const valuesMax = rows.reduce((m, r) => Math.max(m, r.value), 0)
   const max = explicitMax > 0 ? explicitMax : valuesMax || 1
 
+  const { state, show, move, hide } = useTooltip()
+  const [hovered, setHovered] = useState<number | null>(null)
+
   return (
     <div className={cn('flex flex-col', className)} style={{ rowGap: 2 }}>
       {rows.map((r, i) => {
-        const pct = Math.max(0, Math.min(1, r.value / max))
+        const pctVal = Math.max(0, Math.min(1, r.value / max))
+        const isHovered = hovered === i
+        // Bar fill is solid black — use white inset highlight.
+        const outline = isHovered
+          ? 'inset 0 0 0 1.5px rgba(255,255,255,1)'
+          : undefined
         return (
           <div
             key={`${r.label}-${i}`}
@@ -40,6 +58,29 @@ export function Bars({
             style={{
               gridTemplateColumns: `${labelWidth}px 1fr auto`,
               height,
+              cursor: 'default',
+            }}
+            onPointerEnter={(e) => {
+              setHovered(i)
+              const tooltipRows: TooltipRow[] = [
+                { label: 'VALUE', value: r.value.toLocaleString() },
+              ]
+              if (r.max) {
+                tooltipRows.push({
+                  label: 'OF',
+                  value: r.max.toLocaleString(),
+                })
+                tooltipRows.push({
+                  label: '%',
+                  value: pct(r.value / r.max),
+                })
+              }
+              show(e, r.label, tooltipRows)
+            }}
+            onPointerMove={(e) => move(e)}
+            onPointerLeave={() => {
+              setHovered(null)
+              hide()
             }}
           >
             <span className="text-[10px] font-mono tabular-nums uppercase tracking-[0.08em] text-black/60 truncate">
@@ -51,7 +92,10 @@ export function Bars({
             >
               <div
                 className="absolute inset-y-0 left-0 bg-black"
-                style={{ width: `${(pct * 100).toFixed(2)}%` }}
+                style={{
+                  width: `${(pctVal * 100).toFixed(2)}%`,
+                  boxShadow: outline,
+                }}
               />
             </div>
             <span className="text-[10px] font-mono tabular-nums text-black/80 text-right">
@@ -60,6 +104,7 @@ export function Bars({
           </div>
         )
       })}
+      <ChartTooltip state={state} />
     </div>
   )
 }

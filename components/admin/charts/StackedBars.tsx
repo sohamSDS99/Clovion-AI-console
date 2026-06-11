@@ -1,5 +1,10 @@
+'use client'
+
+import { useState } from 'react'
 import { cn } from '@/lib/cn'
 import { ChartLegend } from './Legend'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
 
 export type StackSegment = {
   name: string
@@ -29,6 +34,9 @@ export function StackedBars({
   labelWidth = 120,
   className,
 }: StackedBarsProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hovered, setHovered] = useState<{ r: number; s: number } | null>(null)
+
   if (rows.length === 0) {
     return (
       <div className="border border-dashed border-black/15 py-6 text-center text-[11px] font-mono uppercase tracking-[0.12em] text-black/50">
@@ -74,6 +82,11 @@ export function StackedBars({
               >
                 {r.segments.map((seg, si) => {
                   const pct = (seg.value / Math.max(1, effectiveMax)) * 100
+                  const isHovered =
+                    hovered !== null && hovered.r === ri && hovered.s === si
+                  const outline = isHovered
+                    ? 'inset 0 0 0 1.5px rgba(255,255,255,1)'
+                    : undefined
                   return (
                     <span
                       key={`seg-${ri}-${si}`}
@@ -82,8 +95,27 @@ export function StackedBars({
                         width: `${pct.toFixed(2)}%`,
                         background: seg.color,
                         display: 'inline-block',
+                        boxShadow: outline,
+                        cursor: 'default',
                       }}
                       aria-label={`${seg.name}: ${seg.value}`}
+                      onPointerEnter={(e) => {
+                        setHovered({ r: ri, s: si })
+                        show(
+                          e,
+                          r.label,
+                          r.segments.map((s) => ({
+                            color: s.color,
+                            label: s.name ?? '—',
+                            value: s.value.toLocaleString(),
+                          })),
+                        )
+                      }}
+                      onPointerMove={(e) => move(e)}
+                      onPointerLeave={() => {
+                        setHovered(null)
+                        hide()
+                      }}
                     />
                   )
                 })}
@@ -105,6 +137,7 @@ export function StackedBars({
           }))}
         />
       ) : null}
+      <ChartTooltip state={state} />
     </div>
   )
 }

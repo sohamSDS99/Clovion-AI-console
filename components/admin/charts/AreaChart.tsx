@@ -1,5 +1,11 @@
+'use client'
+
+import { useRef } from 'react'
 import { cn } from '@/lib/cn'
 import { ChartLegend } from './Legend'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
+import { useChartCursor } from './useChartCursor'
 
 export type AreaSeries = {
   name: string
@@ -17,9 +23,17 @@ export type AreaChartProps = {
   yMin?: number
   yMax?: number
   className?: string
+  /** Optional value formatter for tooltip values. Defaults to localized number with up to 2 decimals. */
+  format?: (n: number) => string
 }
 
 type Point = readonly [number, number]
+
+function defaultFormat(n: number): string {
+  if (!Number.isFinite(n)) return String(n)
+  if (Number.isInteger(n)) return n.toLocaleString()
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 })
+}
 
 function catmullRomPath(points: Point[]): string {
   if (points.length === 0) return ''
@@ -63,8 +77,27 @@ export function AreaChart({
   yMin,
   yMax,
   className,
+  format,
 }: AreaChartProps) {
-  if (series.length === 0 || series.every((s) => s.values.length === 0)) {
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const tooltip = useTooltip()
+
+  const padLeft = 32
+  const padRight = 8
+  const padTop = 10
+  const padBottom = xLabels && xLabels.length > 0 ? 22 : 10
+
+  const isEmpty =
+    series.length === 0 || series.every((s) => s.values.length === 0)
+
+  const n = isEmpty ? 0 : Math.max(...series.map((s) => s.values.length))
+
+  const cursor = useChartCursor(svgRef, n, {
+    paddingLeft: padLeft,
+    paddingRight: padRight,
+  })
+
+  if (isEmpty) {
     return (
       <div className="border border-dashed border-black/15 py-6 text-center text-[11px] font-mono uppercase tracking-[0.12em] text-black/50">
         EMPTY
@@ -72,10 +105,6 @@ export function AreaChart({
     )
   }
 
-  const padLeft = 32
-  const padRight = 8
-  const padTop = 10
-  const padBottom = xLabels && xLabels.length > 0 ? 22 : 10
   const chartW = width - padLeft - padRight
   const chartH = height - padTop - padBottom
 
@@ -86,15 +115,17 @@ export function AreaChart({
   const hi = yMax !== undefined ? yMax : inferredMax
   const span = hi - lo || 1
 
-  const n = Math.max(...series.map((s) => s.values.length))
   const stepX = n > 1 ? chartW / (n - 1) : chartW
 
+  function xAt(i: number): number {
+    return padLeft + (n > 1 ? i * stepX : chartW / 2)
+  }
+  function yAt(v: number): number {
+    return padTop + (1 - (v - lo) / span) * chartH
+  }
+
   function pointsFor(s: AreaSeries): Point[] {
-    return s.values.map((v, i) => {
-      const x = padLeft + (n > 1 ? i * stepX : chartW / 2)
-      const y = padTop + (1 - (v - lo) / span) * chartH
-      return [x, y] as const
-    })
+    return s.values.map((v, i) => [xAt(i), yAt(v)] as const)
   }
 
   // y-axis ticks (4)
@@ -108,14 +139,48 @@ export function AreaChart({
     ticks.push({ v, y, label })
   }
 
+  const fmt = format ?? defaultFormat
+  const activeIndex = cursor.index
+
+  function handlePointerMove(e: React.PointerEvent<SVGSVGElement>) {
+    // Mimic the MouseEvent shape used by useChartCursor.onMove
+    cursor.onMove(e as unknown as React.MouseEvent<SVGSVGElement>)
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const xClient = e.clientX - rect.left
+    const plotWidth = rect.width - padLeft - padRight
+    if (plotWidth <= 0) return
+    const ratio = (xClient - padLeft) / plotWidth
+    const denom = n > 1 ? n - 1 : 1
+    const raw = Math.round(ratio * denom)
+    const idx = Math.max(0, Math.min(n - 1, raw))
+    const title = xLabels?.[idx] ?? `#${idx}`
+    const rows = series.map((s) => ({
+      color: s.color,
+      label: s.name,
+      value: fmt(s.values[idx] ?? 0),
+    }))
+    tooltip.show(e.nativeEvent as MouseEvent, title, rows)
+  }
+
+  function handlePointerLeave() {
+    cursor.onLeave()
+    tooltip.hide()
+  }
+
   return (
     <div className={cn('w-full', className)}>
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         height={height}
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
       >
         <defs>
           {series.map((s, i) => (
@@ -164,7 +229,7 @@ export function AreaChart({
           <g>
             {xLabels.map((lbl, i) => {
               if (i % Math.max(1, Math.floor(xLabels.length / 8)) !== 0) return null
-              const x = padLeft + (n > 1 ? i * stepX : chartW / 2)
+              const x = xAt(i)
               return (
                 <text
                   key={`xl-${i}`}
@@ -211,6 +276,38 @@ export function AreaChart({
             </g>
           )
         })}
+
+        {/* hover crosshair + point markers */}
+        {activeIndex !== null ? (
+          <g pointerEvents="none">
+            <line
+              x1={xAt(activeIndex)}
+              x2={xAt(activeIndex)}
+              y1={padTop}
+              y2={padTop + chartH}
+              stroke="#000"
+              strokeOpacity={0.35}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+            {series.map((s, i) => {
+              const v = s.values[activeIndex]
+              if (v === undefined) return null
+              return (
+                <circle
+                  key={`hp-${i}`}
+                  cx={xAt(activeIndex)}
+                  cy={yAt(v)}
+                  r={3}
+                  fill={s.color}
+                  stroke="#000"
+                  strokeOpacity={0.0}
+                  strokeWidth={0}
+                />
+              )
+            })}
+          </g>
+        ) : null}
       </svg>
 
       {showLegend ? (
@@ -219,6 +316,8 @@ export function AreaChart({
           items={series.map((s) => ({ label: s.name, color: s.color }))}
         />
       ) : null}
+
+      <ChartTooltip state={tooltip.state} />
     </div>
   )
 }

@@ -1,4 +1,9 @@
+'use client'
+
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
+import { useState } from 'react'
 
 export type SankeyNode = {
   id: string
@@ -42,6 +47,11 @@ type LaidLink = Omit<SankeyLink, 'source' | 'target' | 'color'> & {
   color: string
 }
 
+function pct(n: number) {
+  if (!Number.isFinite(n)) return '0%'
+  return `${(n * 100).toFixed(1)}%`
+}
+
 export function Sankey({
   nodes,
   links,
@@ -50,6 +60,10 @@ export function Sankey({
   className,
   showWidestLinkLabel = true,
 }: SankeyProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hoverLinkIdx, setHoverLinkIdx] = useState<number | null>(null)
+  const [hoverNodeId, setHoverNodeId] = useState<string | null>(null)
+
   if (nodes.length === 0) {
     return (
       <div className="border border-dashed border-black/15 py-6 text-center text-[11px] font-mono uppercase tracking-[0.12em] text-black/50">
@@ -239,51 +253,108 @@ export function Sankey({
               x2={l.target.x}
               y2={l.targetY}
             >
-              <stop offset="0%" stopColor={l.source.color} stopOpacity={0.7} />
-              <stop offset="100%" stopColor={l.target.color} stopOpacity={0.7} />
+              <stop offset="0%" stopColor={l.source.color} stopOpacity={hoverLinkIdx === i ? 1 : 0.7} />
+              <stop offset="100%" stopColor={l.target.color} stopOpacity={hoverLinkIdx === i ? 1 : 0.7} />
             </linearGradient>
           ))}
         </defs>
 
         {/* Links first so nodes overlay */}
-        {laidLinks.map((l, i) => (
-          <path key={`lk-${i}`} d={bezierPath(l)} fill={`url(#sk-${i})`} />
-        ))}
+        {laidLinks.map((l, i) => {
+          const sourceTotal = colTotal.get(l.source.column) ?? 0
+          return (
+            <path
+              key={`lk-${i}`}
+              d={bezierPath(l)}
+              fill={`url(#sk-${i})`}
+              style={{ cursor: 'pointer' }}
+              onPointerEnter={(e) => {
+                setHoverLinkIdx(i)
+                show(e, `${l.source.label} → ${l.target.label}`, [
+                  {
+                    label: 'USERS',
+                    value: l.value.toLocaleString('en-US'),
+                  },
+                  {
+                    label: '% OF SOURCE',
+                    value: sourceTotal > 0 ? pct(l.value / sourceTotal) : '0%',
+                  },
+                ])
+              }}
+              onPointerMove={(e) => move(e)}
+              onPointerLeave={() => {
+                setHoverLinkIdx((curr) => (curr === i ? null : curr))
+                hide()
+              }}
+            />
+          )
+        })}
 
         {/* Nodes */}
-        {Object.values(laid).map((n) => (
-          <g key={`n-${n.id}`}>
-            <rect x={n.x} y={n.y} width={n.w} height={n.h} fill={n.color} />
-            <text
-              x={n.x + n.w + 5}
-              y={n.y + 9}
-              fontSize="10"
-              fontFamily="ui-monospace, 'JetBrains Mono', monospace"
-              fill="#000"
-              style={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}
-            >
-              {n.label}
-            </text>
-            <text
-              x={n.x + n.w + 5}
-              y={n.y + 20}
-              fontSize="9.5"
-              fontFamily="ui-monospace, 'JetBrains Mono', monospace"
-              fill="#000"
-              fillOpacity={0.5}
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {n.value.toLocaleString('en-US')}
-            </text>
-          </g>
-        ))}
+        {Object.values(laid).map((n) => {
+          const isHovered = hoverNodeId === n.id
+          return (
+            <g key={`n-${n.id}`}>
+              <rect
+                x={n.x}
+                y={n.y}
+                width={n.w}
+                height={n.h}
+                fill={n.color}
+                stroke={isHovered ? '#000' : 'none'}
+                strokeWidth={isHovered ? 1.5 : 0}
+                style={{ cursor: 'pointer' }}
+                onPointerEnter={(e) => {
+                  setHoverNodeId(n.id)
+                  show(e, n.label, [
+                    {
+                      label: 'TOTAL',
+                      value: n.value.toLocaleString('en-US'),
+                    },
+                    { label: 'COLUMN', value: `COL ${n.column}` },
+                  ])
+                }}
+                onPointerMove={(e) => move(e)}
+                onPointerLeave={() => {
+                  setHoverNodeId((curr) => (curr === n.id ? null : curr))
+                  hide()
+                }}
+              />
+              <text
+                x={n.x + n.w + 5}
+                y={n.y + 9}
+                fontSize="10"
+                fontFamily="ui-monospace, 'JetBrains Mono', monospace"
+                fill="#000"
+                style={{
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  pointerEvents: 'none',
+                }}
+              >
+                {n.label}
+              </text>
+              <text
+                x={n.x + n.w + 5}
+                y={n.y + 20}
+                fontSize="9.5"
+                fontFamily="ui-monospace, 'JetBrains Mono', monospace"
+                fill="#000"
+                fillOpacity={0.5}
+                style={{ fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}
+              >
+                {n.value.toLocaleString('en-US')}
+              </text>
+            </g>
+          )
+        })}
 
         {/* Widest link labels per column */}
         {showWidestLinkLabel
           ? [...widestPerCol.values()].map((l, i) => {
               const inboundTotal =
                 cols.get(l.source.column)?.reduce((s, n) => s + n.value, 0) ?? 0
-              const pct = inboundTotal > 0 ? l.value / inboundTotal : 0
+              const pctVal = inboundTotal > 0 ? l.value / inboundTotal : 0
               const cx =
                 (l.source.x + l.source.w + l.target.x) / 2 -
                 (l.target.x - (l.source.x + l.source.w)) * 0.05
@@ -301,14 +372,17 @@ export function Sankey({
                   style={{
                     fontVariantNumeric: 'tabular-nums',
                     letterSpacing: '0.08em',
+                    pointerEvents: 'none',
                   }}
                 >
-                  {`${(pct * 100).toFixed(0)}% — ${l.value.toLocaleString('en-US')}`}
+                  {`${(pctVal * 100).toFixed(0)}% — ${l.value.toLocaleString('en-US')}`}
                 </text>
               )
             })
           : null}
       </svg>
+
+      <ChartTooltip state={state} />
     </div>
   )
 }

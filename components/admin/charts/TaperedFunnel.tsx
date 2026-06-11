@@ -1,5 +1,10 @@
+'use client'
+
 import { cn } from '@/lib/cn'
 import { Empty } from '@/components/admin/Empty'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
+import { useState } from 'react'
 
 export type TaperedFunnelStep = {
   name: string
@@ -27,6 +32,13 @@ function formatNumber(n: number): string {
   return n.toLocaleString('en-US')
 }
 
+function pct(n: number) {
+  if (!Number.isFinite(n)) return '0%'
+  return `${(n * 100).toFixed(1)}%`
+}
+
+type Row = { label: string; value: string }
+
 export function TaperedFunnel({
   steps,
   width = 640,
@@ -34,6 +46,9 @@ export function TaperedFunnel({
   color = 'var(--chart-1)',
   className,
 }: TaperedFunnelProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+
   if (steps.length === 0) {
     return <Empty />
   }
@@ -53,11 +68,6 @@ export function TaperedFunnel({
   const rightGutter = 140
   const totalWidth = leftGutter + width + rightGutter
   const totalHeight = steps.length * stepHeight
-
-  // Build trapezoid polygons + connector lines.
-  // Each step occupies [stepHeight * i, stepHeight * (i+1)] vertically.
-  // Top edge width = stepWidths[i]; bottom edge width tapers toward stepWidths[i+1] (or itself if last).
-  // Horizontal coordinates are offset by leftGutter so the funnel sits inside the gutters.
 
   return (
     <div
@@ -102,6 +112,20 @@ export function TaperedFunnel({
           // 1px guideline along the funnel edges separating each step.)
           const dividerY = yTop
 
+          const isHovered = hoverIdx === i
+
+          const rows: Row[] = [
+            { label: 'ENTERED', value: s.entered.toLocaleString('en-US') },
+            { label: 'COMPLETED', value: s.completed.toLocaleString('en-US') },
+            {
+              label: 'CONVERSION',
+              value: s.entered > 0 ? pct(s.completed / s.entered) : '0%',
+            },
+          ]
+          if (typeof s.medianHoursToStep === 'number') {
+            rows.push({ label: 'MEDIAN TIME', value: `${s.medianHoursToStep}h` })
+          }
+
           return (
             <g key={`step-${i}-${s.name}`}>
               {/* Trapezoid */}
@@ -110,8 +134,18 @@ export function TaperedFunnel({
                 fill={color}
                 fillOpacity={0.18}
                 stroke="#000"
-                strokeOpacity={0.4}
-                strokeWidth={1}
+                strokeOpacity={isHovered ? 0.8 : 0.4}
+                strokeWidth={isHovered ? 1.5 : 1}
+                style={{ cursor: 'pointer' }}
+                onPointerEnter={(e) => {
+                  setHoverIdx(i)
+                  show(e, s.name, rows)
+                }}
+                onPointerMove={(e) => move(e)}
+                onPointerLeave={() => {
+                  setHoverIdx((curr) => (curr === i ? null : curr))
+                  hide()
+                }}
               />
               {/* Thin divider line at the top edge of each step (skip first) */}
               {i > 0 ? (
@@ -123,6 +157,7 @@ export function TaperedFunnel({
                   stroke="#000"
                   strokeOpacity={0.15}
                   strokeWidth={1}
+                  style={{ pointerEvents: 'none' }}
                 />
               ) : null}
               {/* Step name (inside, centered top half) */}
@@ -137,6 +172,7 @@ export function TaperedFunnel({
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   fontFamily: 'var(--sans)',
+                  pointerEvents: 'none',
                 }}
               >
                 {s.name}
@@ -152,6 +188,7 @@ export function TaperedFunnel({
                 style={{
                   fontFamily: 'var(--mono)',
                   fontVariantNumeric: 'tabular-nums',
+                  pointerEvents: 'none',
                 }}
               >
                 {formatNumber(s.entered)}
@@ -168,6 +205,7 @@ export function TaperedFunnel({
                   style={{
                     fontFamily: 'var(--mono)',
                     fontVariantNumeric: 'tabular-nums',
+                    pointerEvents: 'none',
                   }}
                 >
                   {formatHours(s.medianHoursToStep)}
@@ -184,6 +222,7 @@ export function TaperedFunnel({
                 style={{
                   fontFamily: 'var(--mono)',
                   fontVariantNumeric: 'tabular-nums',
+                  pointerEvents: 'none',
                 }}
               >
                 {convPct.toFixed(1)}%
@@ -199,6 +238,7 @@ export function TaperedFunnel({
                   style={{
                     fontFamily: 'var(--mono)',
                     fontVariantNumeric: 'tabular-nums',
+                    pointerEvents: 'none',
                   }}
                 >
                   {`Δ -${formatNumber(Math.max(0, drop))} drop`}
@@ -208,6 +248,8 @@ export function TaperedFunnel({
           )
         })}
       </svg>
+
+      <ChartTooltip state={state} />
     </div>
   )
 }

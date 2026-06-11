@@ -1,4 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from './charts/ChartTooltip'
+import { useTooltip } from './charts/useTooltip'
 
 export type HeatmapProps = {
   grid: number[][]
@@ -42,6 +47,9 @@ export function Heatmap({
   )
   const effectiveMax = max ?? inferredMax
 
+  const { state, show, move, hide } = useTooltip()
+  const [hovered, setHovered] = useState<{ r: number; c: number } | null>(null)
+
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
       <table
@@ -71,10 +79,23 @@ export function Heatmap({
               </th>
               {row.map((v, ci) => {
                 const bg = stepFor(v, effectiveMax)
+                const ratio = effectiveMax > 0 ? v / effectiveMax : 0
                 // Text color flips to white once the cell is dark enough.
-                const dark =
-                  effectiveMax > 0 && v / effectiveMax >= 0.55 ? '#fff' : '#000'
+                const dark = ratio >= 0.55 ? '#fff' : '#000'
                 const label = format ? format(v, ri, ci) : ''
+                const isHovered =
+                  hovered !== null && hovered.r === ri && hovered.c === ci
+                const isDarkCell = ratio >= 0.55
+                const outline = isHovered
+                  ? isDarkCell
+                    ? 'inset 0 0 0 1.5px rgba(255,255,255,1)'
+                    : 'inset 0 0 0 1.5px rgba(0,0,0,0.8)'
+                  : undefined
+                const rowLabel = rowLabels[ri] ?? ''
+                const colLabel = colLabels[ci] ?? ''
+                const formatted = format
+                  ? format(v, ri, ci) || v.toLocaleString('en-US')
+                  : v.toLocaleString('en-US')
                 return (
                   <td
                     key={`c-${ri}-${ci}`}
@@ -85,6 +106,19 @@ export function Heatmap({
                       height: 22,
                       textAlign: 'center',
                       padding: '0 4px',
+                      boxShadow: outline,
+                      cursor: 'default',
+                    }}
+                    onPointerEnter={(e) => {
+                      setHovered({ r: ri, c: ci })
+                      show(e, `${rowLabel} × ${colLabel}`, [
+                        { label: 'VALUE', value: formatted },
+                      ])
+                    }}
+                    onPointerMove={(e) => move(e)}
+                    onPointerLeave={() => {
+                      setHovered(null)
+                      hide()
                     }}
                   >
                     {label}
@@ -95,6 +129,7 @@ export function Heatmap({
           ))}
         </tbody>
       </table>
+      <ChartTooltip state={state} />
     </div>
   )
 }

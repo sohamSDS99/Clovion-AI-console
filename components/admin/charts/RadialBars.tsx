@@ -1,4 +1,9 @@
+'use client'
+
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
+import { useState } from 'react'
 
 export type RadialItem = {
   label: string
@@ -44,12 +49,22 @@ function ringArc(
   ].join(' ')
 }
 
+function pct(n: number) {
+  if (!Number.isFinite(n)) return '0%'
+  return `${(n * 100).toFixed(1)}%`
+}
+
+type Row = { label: string; value: string }
+
 export function RadialBars({
   items,
   size = 110,
   thickness = 10,
   className,
 }: RadialBarsProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+
   if (items.length === 0) {
     return (
       <div className="border border-dashed border-black/15 py-6 text-center text-[11px] font-mono uppercase tracking-[0.12em] text-black/50">
@@ -78,8 +93,19 @@ export function RadialBars({
         const cy = size / 2
         const rOuter = size / 2 - 1
         const rInner = rOuter - thickness
-        const pct = Math.max(0, Math.min(1, it.max > 0 ? it.value / it.max : 0))
-        const fgEnd = startDeg + totalSweep * pct
+        const pctVal = Math.max(0, Math.min(1, it.max > 0 ? it.value / it.max : 0))
+        const fgEnd = startDeg + totalSweep * pctVal
+        const isHovered = hoverIdx === i
+
+        const rows: Row[] = [
+          { label: 'VALUE', value: it.value.toLocaleString('en-US') },
+          { label: 'MAX', value: it.max.toLocaleString('en-US') },
+          { label: '%', value: it.max > 0 ? pct(it.value / it.max) : '0%' },
+        ]
+        if (it.sublabel) {
+          rows.push({ label: 'NOTE', value: it.sublabel })
+        }
+
         return (
           <div key={`r-${i}`} className="flex flex-col items-center gap-1.5">
             <svg
@@ -98,8 +124,35 @@ export function RadialBars({
                 <path
                   d={ringArc(cx, cy, rOuter, rInner, startDeg, fgEnd)}
                   fill={it.color}
+                  stroke={isHovered ? '#fff' : 'none'}
+                  strokeWidth={isHovered ? 1.5 : 0}
+                  style={{ cursor: 'pointer' }}
+                  onPointerEnter={(e) => {
+                    setHoverIdx(i)
+                    show(e, it.label, rows)
+                  }}
+                  onPointerMove={(e) => move(e)}
+                  onPointerLeave={() => {
+                    setHoverIdx((curr) => (curr === i ? null : curr))
+                    hide()
+                  }}
                 />
               ) : null}
+              {/* Invisible full-ring hit area so hovering empty section also triggers */}
+              <path
+                d={ringArc(cx, cy, rOuter, rInner, startDeg, endDeg)}
+                fill="transparent"
+                style={{ cursor: 'pointer' }}
+                onPointerEnter={(e) => {
+                  setHoverIdx(i)
+                  show(e, it.label, rows)
+                }}
+                onPointerMove={(e) => move(e)}
+                onPointerLeave={() => {
+                  setHoverIdx((curr) => (curr === i ? null : curr))
+                  hide()
+                }}
+              />
               <text
                 x={cx}
                 y={cy + 5}
@@ -108,9 +161,12 @@ export function RadialBars({
                 fontFamily="ui-monospace, 'JetBrains Mono', monospace"
                 fontWeight="600"
                 fill="#000"
-                style={{ fontVariantNumeric: 'tabular-nums' }}
+                style={{
+                  fontVariantNumeric: 'tabular-nums',
+                  pointerEvents: 'none',
+                }}
               >
-                {Math.round(pct * 100)}%
+                {Math.round(pctVal * 100)}%
               </text>
             </svg>
             <div className="flex flex-col items-center leading-tight">
@@ -126,6 +182,8 @@ export function RadialBars({
           </div>
         )
       })}
+
+      <ChartTooltip state={state} />
     </div>
   )
 }

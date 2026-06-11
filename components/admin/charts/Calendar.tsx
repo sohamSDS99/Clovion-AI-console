@@ -1,4 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
 
 export type CalendarCell = {
   date: string // YYYY-MM-DD
@@ -41,6 +46,9 @@ export function Calendar({
   cellGap = 2,
   className,
 }: CalendarProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hovered, setHovered] = useState<{ r: number; c: number } | null>(null)
+
   if (values.length === 0) {
     return (
       <div className="border border-dashed border-black/15 py-6 text-center text-[11px] font-mono uppercase tracking-[0.12em] text-black/50">
@@ -145,6 +153,12 @@ export function Calendar({
               : effectiveMax > 0
                 ? Math.max(0.06, Math.min(1, cell.value / effectiveMax))
                 : 0.06
+            const isHovered =
+              hovered !== null && hovered.r === r && hovered.c === c
+            // Calendar cells are low-opacity tinted single color — use black outline.
+            const outline = isHovered
+              ? 'inset 0 0 0 1.5px rgba(0,0,0,0.8)'
+              : undefined
             return (
               <span
                 key={`c-${r}-${c}`}
@@ -155,13 +169,27 @@ export function Calendar({
                   background: color,
                   opacity: op,
                   display: 'inline-block',
+                  boxShadow: outline,
+                  cursor: 'default',
                 }}
                 aria-label={`${cell.date}: ${cell.value}`}
+                onPointerEnter={(e) => {
+                  setHovered({ r, c })
+                  show(e, cell.date, [
+                    { label: 'VALUE', value: cell.value.toLocaleString() },
+                  ])
+                }}
+                onPointerMove={(e) => move(e)}
+                onPointerLeave={() => {
+                  setHovered(null)
+                  hide()
+                }}
               />
             )
           })}
         </div>
       ))}
+      <ChartTooltip state={state} />
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { PageHeader } from '@/components/admin/PageHeader'
 import { KpiCard, KpiGrid } from '@/components/admin/KpiCard'
 import { Panel } from '@/components/admin/Panel'
 import { DataTable } from '@/components/admin/DataTable'
-import { Waterfall } from '@/components/admin/Waterfall'
+import { WaterfallCents } from '@/components/admin/charts/PageWrappers'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
 import { AreaChart } from '@/components/admin/charts/AreaChart'
@@ -420,9 +420,8 @@ export default async function RevenuePage() {
           meta="30D"
           className="xl:col-span-2"
         >
-          <Waterfall
+          <WaterfallCents
             bars={waterfallBars}
-            format={(v) => formatCents(v, 0)}
             height={200}
             width={720}
           />

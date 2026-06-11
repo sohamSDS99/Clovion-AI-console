@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/admin/PageHeader'
 import { Panel } from '@/components/admin/Panel'
 import { KpiCard, KpiGrid } from '@/components/admin/KpiCard'
 import { Bars } from '@/components/admin/Bars'
-import { Heatmap } from '@/components/admin/Heatmap'
+import { HeatmapInteger } from '@/components/admin/charts/PageWrappers'
 import { DataTable } from '@/components/admin/DataTable'
 import { Empty } from '@/components/admin/Empty'
 import { Badge } from '@/components/admin/Badge'
@@ -304,12 +304,11 @@ export default async function RetentionPage() {
         className="mb-4"
       >
         {heatmapGrid.length ? (
-          <Heatmap
+          <HeatmapInteger
             grid={heatmapGrid}
             rowLabels={heatmapRows}
             colLabels={heatmapCols}
             max={100}
-            format={(v) => (v > 0 ? `${v.toFixed(0)}` : '')}
           />
         ) : (
           <Empty />

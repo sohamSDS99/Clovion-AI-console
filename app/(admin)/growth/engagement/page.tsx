@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/admin/PageHeader'
 import { Panel } from '@/components/admin/Panel'
 import { KpiCard, KpiGrid } from '@/components/admin/KpiCard'
 import { Bars } from '@/components/admin/Bars'
-import { Heatmap } from '@/components/admin/Heatmap'
+import { HeatmapPercent } from '@/components/admin/charts/PageWrappers'
 import { DataTable } from '@/components/admin/DataTable'
 import { Empty } from '@/components/admin/Empty'
 import { Badge } from '@/components/admin/Badge'
@@ -327,14 +327,13 @@ export default async function EngagementPage() {
         meta="% OF MAU ACCOUNTS · 28D"
         className="mb-4"
       >
-        <Heatmap
+        <HeatmapPercent
           grid={adoptionGrid}
           rowLabels={features.map((f) => f.replace(/_/g, ' ').toUpperCase())}
           colLabels={plans.map((p) =>
             planLabel(p as 'free' | 'starter' | 'growth' | 'enterprise'),
           )}
           max={100}
-          format={(v) => `${v}%`}
         />
       </Panel>
 

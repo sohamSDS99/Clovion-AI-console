@@ -1,4 +1,9 @@
+'use client'
+
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
+import { useState } from 'react'
 
 export type GaugeProps = {
   value: number
@@ -28,6 +33,11 @@ function polar(cx: number, cy: number, r: number, angleDeg: number) {
   return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }
 }
 
+function pct(n: number) {
+  if (!Number.isFinite(n)) return '0%'
+  return `${(n * 100).toFixed(1)}%`
+}
+
 export function Gauge({
   value,
   max,
@@ -41,6 +51,9 @@ export function Gauge({
   danger = false,
   className,
 }: GaugeProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hovered, setHovered] = useState(false)
+
   const safeMax = max > 0 ? max : 1
   const ratio = Math.max(0, Math.min(1, value / safeMax))
   const isDanger = danger && ratio > 0.85
@@ -78,14 +91,40 @@ export function Gauge({
     targetMark = { x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y }
   }
 
+  // Current-value tick (shown on hover)
+  const valAngle = -90 + 180 * ratio
+  const valInner = polar(cx, cy, r - thickness / 2, valAngle)
+  const valOuter = polar(cx, cy, r + thickness / 2, valAngle)
+
   // Total SVG height: room for the upper half (size/2 + pad) + text area beneath the gauge baseline.
   const textBlockHeight = metaLabel ? 44 : 30
   const svgHeight = cy + textBlockHeight
   const valueY = cy - 6
   const metaY = cy + 12
 
+  const tooltipRows = [
+    { label: 'VALUE', value: valueLabel ?? String(value) },
+    { label: 'OF', value: max.toLocaleString('en-US') },
+    ...(target != null
+      ? [{ label: 'TARGET', value: target.toLocaleString('en-US') }]
+      : []),
+    { label: 'USED', value: pct(value / safeMax) },
+  ]
+
   return (
-    <div className={cn('flex flex-col items-center', className)}>
+    <div
+      className={cn('flex flex-col items-center', className)}
+      style={{ cursor: 'pointer' }}
+      onPointerEnter={(e) => {
+        setHovered(true)
+        show(e, label, tooltipRows)
+      }}
+      onPointerMove={(e) => move(e)}
+      onPointerLeave={() => {
+        setHovered(false)
+        hide()
+      }}
+    >
       <div
         className="text-[9.5px] font-mono uppercase tracking-[0.12em] text-black/55"
         style={{ marginBottom: 4 }}
@@ -130,6 +169,17 @@ export function Gauge({
             strokeWidth={1}
           />
         ) : null}
+        {/* Hover tick at current value */}
+        {hovered && ratio > 0 ? (
+          <line
+            x1={valInner.x.toFixed(2)}
+            y1={valInner.y.toFixed(2)}
+            x2={valOuter.x.toFixed(2)}
+            y2={valOuter.y.toFixed(2)}
+            stroke="#fff"
+            strokeWidth={1.5}
+          />
+        ) : null}
         {/* Center value */}
         <text
           x={cx}
@@ -161,6 +211,8 @@ export function Gauge({
           </text>
         ) : null}
       </svg>
+
+      <ChartTooltip state={state} />
     </div>
   )
 }

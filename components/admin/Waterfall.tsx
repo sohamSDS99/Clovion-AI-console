@@ -1,4 +1,9 @@
+'use client'
+
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from '@/components/admin/charts/ChartTooltip'
+import { useTooltip } from '@/components/admin/charts/useTooltip'
+import { useState } from 'react'
 
 export type WaterfallKind = 'start' | 'positive' | 'negative' | 'end'
 
@@ -24,6 +29,9 @@ export function Waterfall({
   format = (v) => v.toLocaleString('en-US'),
   className,
 }: WaterfallProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+
   if (bars.length === 0) {
     return (
       <div className="border border-dashed border-black/15 py-6 text-center text-[11px] font-mono uppercase tracking-[0.12em] text-black/50">
@@ -36,7 +44,14 @@ export function Waterfall({
   let running = 0
   const segments = bars.map((b) => {
     if (b.kind === 'start' || b.kind === 'end') {
-      const seg = { from: 0, to: b.value, raw: b.value, kind: b.kind, label: b.label }
+      const seg = {
+        from: 0,
+        to: b.value,
+        raw: b.value,
+        kind: b.kind,
+        label: b.label,
+        running: b.value,
+      }
       running = b.value
       return seg
     }
@@ -44,13 +59,27 @@ export function Waterfall({
       const from = running
       const to = running + b.value
       running = to
-      return { from, to, raw: b.value, kind: b.kind, label: b.label }
+      return {
+        from,
+        to,
+        raw: b.value,
+        kind: b.kind,
+        label: b.label,
+        running: to,
+      }
     }
     // negative
     const from = running
     const to = running - Math.abs(b.value)
     running = to
-    return { from, to, raw: -Math.abs(b.value), kind: b.kind, label: b.label }
+    return {
+      from,
+      to,
+      raw: -Math.abs(b.value),
+      kind: b.kind,
+      label: b.label,
+      running: to,
+    }
   })
 
   const ys = segments.flatMap((s) => [s.from, s.to])
@@ -99,6 +128,25 @@ export function Waterfall({
           const h = Math.max(2, bottom - top)
           const isFilled = s.kind === 'start' || s.kind === 'end' || s.kind === 'positive'
           const isAnchor = s.kind === 'start' || s.kind === 'end'
+          const isHovered = hoverIdx === i
+
+          const isTotal = s.kind === 'start' || s.kind === 'end'
+          const tooltipRows = [
+            {
+              label: isTotal
+                ? 'TOTAL'
+                : s.raw >= 0
+                  ? '+CONTRIBUTION'
+                  : '-CONTRIBUTION',
+              value: format(Math.abs(s.raw)),
+            },
+            { label: 'RUNNING', value: format(s.running) },
+          ]
+
+          // Inset stroke: black on filled bars, white on outlined-negative bars.
+          const insetStrokeColor = isFilled ? '#000' : '#fff'
+          // For outlined-negative we use white inset; render an inset stroke via
+          // an inner rect.
 
           return (
             <g key={`${s.label}-${i}`}>
@@ -124,7 +172,30 @@ export function Waterfall({
                 fill={isFilled ? '#000' : 'rgba(0,0,0,0.08)'}
                 stroke="#000"
                 strokeWidth={1}
+                style={{ cursor: 'pointer' }}
+                onPointerEnter={(e) => {
+                  setHoverIdx(i)
+                  show(e, s.label, tooltipRows)
+                }}
+                onPointerMove={(e) => move(e)}
+                onPointerLeave={() => {
+                  setHoverIdx((curr) => (curr === i ? null : curr))
+                  hide()
+                }}
               />
+              {/* hover inset stroke */}
+              {isHovered ? (
+                <rect
+                  x={x + 0.75}
+                  y={top + 0.75}
+                  width={Math.max(0, barW - 1.5)}
+                  height={Math.max(0, h - 1.5)}
+                  fill="none"
+                  stroke={insetStrokeColor}
+                  strokeWidth={1.5}
+                  pointerEvents="none"
+                />
+              ) : null}
               {/* anchor underbar */}
               {isAnchor ? (
                 <line
@@ -134,6 +205,7 @@ export function Waterfall({
                   y2={bottom + 2}
                   stroke="#000"
                   strokeWidth={1}
+                  pointerEvents="none"
                 />
               ) : null}
               {/* value label above */}
@@ -144,6 +216,7 @@ export function Waterfall({
                 fontFamily="ui-monospace, 'JetBrains Mono', monospace"
                 textAnchor="middle"
                 fill="#000"
+                style={{ pointerEvents: 'none' }}
               >
                 {format(s.raw)}
               </text>
@@ -156,7 +229,11 @@ export function Waterfall({
                 textAnchor="middle"
                 fill="#000"
                 fillOpacity={0.7}
-                style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}
+                style={{
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  pointerEvents: 'none',
+                }}
               >
                 {s.label}
               </text>
@@ -164,6 +241,8 @@ export function Waterfall({
           )
         })}
       </svg>
+
+      <ChartTooltip state={state} />
     </div>
   )
 }

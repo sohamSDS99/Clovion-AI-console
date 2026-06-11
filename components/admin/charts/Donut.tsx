@@ -1,4 +1,9 @@
+'use client'
+
 import { cn } from '@/lib/cn'
+import { ChartTooltip } from './ChartTooltip'
+import { useTooltip } from './useTooltip'
+import { useState } from 'react'
 
 export type DonutSlice = {
   label: string
@@ -43,6 +48,11 @@ function arcPath(
   ].join(' ')
 }
 
+function pct(n: number) {
+  if (!Number.isFinite(n)) return '0%'
+  return `${(n * 100).toFixed(1)}%`
+}
+
 export function Donut({
   slices,
   size = 160,
@@ -52,6 +62,9 @@ export function Donut({
   className,
   showLegend = true,
 }: DonutProps) {
+  const { state, show, move, hide } = useTooltip()
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null)
+
   const total = slices.reduce((s, x) => s + x.value, 0)
   if (total <= 0 || slices.length === 0) {
     return (
@@ -69,11 +82,11 @@ export function Donut({
 
   let cursor = 0
   const arcs = slices.map((s) => {
-    const pct = s.value / total
+    const p = s.value / total
     const start = cursor + gapDeg / 2
-    const end = cursor + pct * 360 - gapDeg / 2
-    cursor += pct * 360
-    return { ...s, pct, start, end }
+    const end = cursor + p * 360 - gapDeg / 2
+    cursor += p * 360
+    return { ...s, pct: p, start, end }
   })
 
   return (
@@ -84,13 +97,31 @@ export function Donut({
         height={size}
         aria-hidden="true"
       >
-        {arcs.map((a, i) => (
-          <path
-            key={`a-${i}`}
-            d={arcPath(cx, cy, rOuter, rInner, a.start, a.end)}
-            fill={a.color}
-          />
-        ))}
+        {arcs.map((a, i) => {
+          const isHovered = hoverIdx === i
+          return (
+            <path
+              key={`a-${i}`}
+              d={arcPath(cx, cy, rOuter, rInner, a.start, a.end)}
+              fill={a.color}
+              stroke={isHovered ? '#fff' : 'none'}
+              strokeWidth={isHovered ? 1.5 : 0}
+              style={{ cursor: 'pointer' }}
+              onPointerEnter={(e) => {
+                setHoverIdx(i)
+                show(e, a.label, [
+                  { label: 'VALUE', value: a.value.toLocaleString('en-US') },
+                  { label: '%', value: pct(a.value / total) },
+                ])
+              }}
+              onPointerMove={(e) => move(e)}
+              onPointerLeave={() => {
+                setHoverIdx((curr) => (curr === i ? null : curr))
+                hide()
+              }}
+            />
+          )
+        })}
         {centerValue ? (
           <text
             x={cx}
@@ -100,7 +131,7 @@ export function Donut({
             fontFamily="ui-monospace, 'JetBrains Mono', monospace"
             fontWeight="600"
             fill="#000"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
+            style={{ fontVariantNumeric: 'tabular-nums', pointerEvents: 'none' }}
           >
             {centerValue}
           </text>
@@ -114,7 +145,11 @@ export function Donut({
             fontFamily="ui-monospace, 'JetBrains Mono', monospace"
             fill="#000"
             fillOpacity={0.5}
-            style={{ textTransform: 'uppercase', letterSpacing: '0.12em' }}
+            style={{
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              pointerEvents: 'none',
+            }}
           >
             {centerLabel}
           </text>
@@ -148,6 +183,8 @@ export function Donut({
           ))}
         </div>
       ) : null}
+
+      <ChartTooltip state={state} />
     </div>
   )
 }

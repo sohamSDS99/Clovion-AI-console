@@ -2,7 +2,7 @@ import { PageHeader } from '@/components/admin/PageHeader'
 import { KpiCard, KpiGrid } from '@/components/admin/KpiCard'
 import { Panel } from '@/components/admin/Panel'
 import { DataTable } from '@/components/admin/DataTable'
-import { Waterfall } from '@/components/admin/Waterfall'
+import { WaterfallCents } from '@/components/admin/charts/PageWrappers'
 import { FreshnessStrip } from '@/components/admin/FreshnessStrip'
 import { Empty } from '@/components/admin/Empty'
 import { MultiLine } from '@/components/admin/charts/MultiLine'
@@ -347,9 +347,8 @@ export default async function CommandCenterPage() {
           )}
         </Panel>
         <Panel title="MRR / 30D WATERFALL" meta="USD">
-          <Waterfall
+          <WaterfallCents
             bars={waterfall}
-            format={(v) => formatCents(v, 0)}
             height={180}
             width={680}
           />
