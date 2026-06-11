@@ -9,8 +9,11 @@ const config: Config = {
         paper: '#ffffff',
       },
       fontFamily: {
+        // Single typeface across the console — Saans SemiBold. The mono utility
+        // keeps the name (still used semantically for "treat me as monospace-aligned")
+        // but resolves to Saans + tabular-nums for OpenType column alignment.
         sans: ['var(--font-saans)', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'Menlo', 'monospace'],
+        mono: ['var(--font-saans)', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         ops: '0.12em',

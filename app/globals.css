@@ -10,8 +10,11 @@
   --line-strong: rgba(0, 0, 0, 0.22);
   --mute: rgba(0, 0, 0, 0.45);
   --mute-2: rgba(0, 0, 0, 0.65);
-  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* One font across the whole console: Saans SemiBold.
+     Tabular numerics preserved via font-feature-settings: 'tnum' inherited from body
+     and re-applied to .font-mono / code / kbd / pre / samp below. */
   --sans: var(--font-saans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono: var(--font-saans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   /* Chart palette — ONLY for chart fills/strokes. Never used on chrome. */
   --chart-1: #6366f1; /* indigo — primary series */
@@ -40,7 +43,11 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
-.font-mono, .mono, code, kbd, pre, samp { font-family: var(--mono); }
+.font-mono, .mono, code, kbd, pre, samp {
+  font-family: var(--mono);
+  font-feature-settings: 'tnum' 1, 'ss01' 1;
+  font-variant-numeric: tabular-nums;
+}
 
 ::selection { background: var(--ink); color: var(--paper); }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
