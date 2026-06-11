@@ -5,6 +5,7 @@ import { DataTable } from '@/components/admin/DataTable'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadAlerts, type AlertRow } from '@/lib/admin/queries/alerts'
 import {
   formatDuration,
@@ -344,21 +345,21 @@ export default async function AlertsPage() {
           {agingBars.every((b) => b.value === 0) ? (
             <Empty message="NO OPEN ALERTS" />
           ) : (
-            <Bars rows={agingBars} labelWidth={60} />
+            <Bars rows={agingBars} labelWidth={60} colors={CHART_PALETTE.slice()} />
           )}
         </Panel>
         <Panel title="OPEN / BY OWNER" meta={`${ownerBars.length} ROLES`}>
           {ownerBars.length === 0 ? (
             <Empty />
           ) : (
-            <Bars rows={ownerBars} labelWidth={70} />
+            <Bars rows={ownerBars} labelWidth={70} colors={CHART_PALETTE.slice()} />
           )}
         </Panel>
         <Panel title="TOP / METRICS" meta="90D FIRED">
           {metricBars.length === 0 ? (
             <Empty />
           ) : (
-            <Bars rows={metricBars} labelWidth={140} />
+            <Bars rows={metricBars} labelWidth={140} colors={CHART_PALETTE.slice()} />
           )}
         </Panel>
       </div>

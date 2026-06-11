@@ -6,6 +6,7 @@ import { Bars } from '@/components/admin/Bars'
 import { Badge } from '@/components/admin/Badge'
 import { Empty } from '@/components/admin/Empty'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadOperations, type AdminActionRow } from '@/lib/admin/queries/operations'
 import {
   formatNumber,
@@ -314,7 +315,7 @@ export default async function OperationsPage() {
         </Panel>
 
         <Panel title="ACTIONS BY TYPE" meta="COUNT">
-          <Bars rows={byTypeRows} labelWidth={120} height={18} />
+          <Bars rows={byTypeRows} labelWidth={120} height={18} colors={CHART_PALETTE.slice()} />
         </Panel>
       </div>
 

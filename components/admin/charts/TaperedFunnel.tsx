@@ -5,6 +5,7 @@ import { Empty } from '@/components/admin/Empty'
 import { ChartTooltip } from './ChartTooltip'
 import { useTooltip } from './useTooltip'
 import { useState } from 'react'
+import { paletteAt } from '@/lib/admin/palette'
 
 export type TaperedFunnelStep = {
   name: string
@@ -17,7 +18,10 @@ export type TaperedFunnelProps = {
   steps: TaperedFunnelStep[]
   width?: number
   stepHeight?: number
+  /** Single uniform fill (preserves existing usage). Used when `colors` is not provided. */
   color?: string
+  /** Explicit per-step color array. Cycled with `colors[i % colors.length]`. Highest priority. */
+  colors?: string[]
   className?: string
 }
 
@@ -43,7 +47,8 @@ export function TaperedFunnel({
   steps,
   width = 640,
   stepHeight = 56,
-  color = 'var(--chart-1)',
+  color,
+  colors,
   className,
 }: TaperedFunnelProps) {
   const { state, show, move, hide } = useTooltip()
@@ -55,6 +60,16 @@ export function TaperedFunnel({
 
   const first = steps[0]
   const firstEntered = first.entered > 0 ? first.entered : 1
+
+  // Resolve per-step fill color. Priority:
+  //   1) explicit `colors[]` per-step array
+  //   2) uniform `color` prop (legacy)
+  //   3) auto-cycle palette
+  const resolveColor = (i: number): string => {
+    if (colors && colors.length > 0) return colors[i % colors.length]
+    if (color) return color
+    return paletteAt(i)
+  }
 
   // Compute each trapezoid's TOP width (= entered_i / entered_0 * width)
   // and BOTTOM width (= entered_{i+1} / entered_0 * width) so consecutive
@@ -113,6 +128,7 @@ export function TaperedFunnel({
           const dividerY = yTop
 
           const isHovered = hoverIdx === i
+          const fill = resolveColor(i)
 
           const rows: Row[] = [
             { label: 'ENTERED', value: s.entered.toLocaleString('en-US') },
@@ -131,7 +147,7 @@ export function TaperedFunnel({
               {/* Trapezoid */}
               <polygon
                 points={points}
-                fill={color}
+                fill={fill}
                 fillOpacity={0.18}
                 stroke="#000"
                 strokeOpacity={isHovered ? 0.8 : 0.4}

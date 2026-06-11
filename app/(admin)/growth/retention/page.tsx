@@ -8,6 +8,7 @@ import { DataTable } from '@/components/admin/DataTable'
 import { Empty } from '@/components/admin/Empty'
 import { Badge } from '@/components/admin/Badge'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadRetention } from '@/lib/admin/queries/retention'
 import { metricByKey } from '@/lib/admin/metrics'
 import {
@@ -318,13 +319,13 @@ export default async function RetentionPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <Panel title="RET.CHURN_SPLIT" meta="VOLUNTARY × INVOLUNTARY">
           {churnSplitRows.length ? (
-            <Bars rows={churnSplitRows} labelWidth={120} height={22} />
+            <Bars rows={churnSplitRows} labelWidth={120} height={22} colors={CHART_PALETTE.slice()} />
           ) : (
             <Empty />
           )}
         </Panel>
         <Panel title="RET.REASONS · PARETO" meta="REASON_CODE DISTRIBUTION">
-          <Bars rows={reasonRows} labelWidth={140} height={20} />
+          <Bars rows={reasonRows} labelWidth={140} height={20} colors={CHART_PALETTE.slice()} />
         </Panel>
       </div>
 

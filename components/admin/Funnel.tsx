@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn'
 import { ChartTooltip } from '@/components/admin/charts/ChartTooltip'
 import { useTooltip } from '@/components/admin/charts/useTooltip'
 import { useState } from 'react'
+import { paletteAt } from '@/lib/admin/palette'
 
 export type FunnelStep = {
   name: string
@@ -17,8 +18,10 @@ export type FunnelProps = {
   steps: FunnelStep[]
   className?: string
   labelWidth?: number
-  /** Optional bar fill color. Defaults to black. */
+  /** Single uniform bar fill (legacy). Used when `colors` is not provided. */
   color?: string
+  /** Explicit per-step color array. Cycled with `colors[i % colors.length]`. Highest priority. */
+  colors?: string[]
 }
 
 function pct(n: number) {
@@ -28,7 +31,13 @@ function pct(n: number) {
 
 type Row = { label: string; value: string }
 
-export function Funnel({ steps, className, labelWidth = 200, color }: FunnelProps) {
+export function Funnel({
+  steps,
+  className,
+  labelWidth = 200,
+  color,
+  colors,
+}: FunnelProps) {
   const { state, show, move, hide } = useTooltip()
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
@@ -41,12 +50,23 @@ export function Funnel({ steps, className, labelWidth = 200, color }: FunnelProp
   }
   const first = steps[0].entered || 1
 
+  // Resolve per-step fill color. Priority:
+  //   1) explicit `colors[]` per-step array
+  //   2) uniform `color` prop (legacy)
+  //   3) auto-cycle palette
+  const resolveColor = (i: number): string => {
+    if (colors && colors.length > 0) return colors[i % colors.length]
+    if (color) return color
+    return paletteAt(i)
+  }
+
   return (
     <div className={cn('flex flex-col', className)} style={{ rowGap: 4 }}>
       {steps.map((s, i) => {
         const widthPct = Math.max(0, Math.min(1, s.entered / first))
         const conv = s.conversionPct ?? (s.entered > 0 ? (s.completed / s.entered) * 100 : 0)
         const isHovered = hoverIdx === i
+        const fill = resolveColor(i)
         const rows: Row[] = [
           { label: 'ENTERED', value: s.entered.toLocaleString('en-US') },
           { label: 'COMPLETED', value: s.completed.toLocaleString('en-US') },
@@ -95,7 +115,7 @@ export function Funnel({ steps, className, labelWidth = 200, color }: FunnelProp
                 style={{
                   width: `${(widthPct * 100).toFixed(2)}%`,
                   boxShadow: isHovered ? 'inset 0 0 0 1.5px #fff' : 'none',
-                  background: color ?? '#000',
+                  background: fill,
                 }}
               />
             </div>

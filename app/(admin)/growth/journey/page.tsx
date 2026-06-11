@@ -10,7 +10,7 @@ import { Calendar } from '@/components/admin/charts/Calendar'
 import { pageMeta } from '@/lib/admin/content'
 import { loadJourney } from '@/lib/admin/queries/journey'
 import { formatNumber, formatPercent } from '@/lib/admin/format'
-import { paletteAt, paletteForKey } from '@/lib/admin/palette'
+import { paletteAt, paletteForKey, CHART_PALETTE } from '@/lib/admin/palette'
 
 const m = pageMeta['/growth/journey']!
 
@@ -162,7 +162,7 @@ export default async function JourneyPage() {
 
         <Panel title="JNY.TOP_EXIT_POINTS" meta="STEP-TO-STEP">
           {exitRows.length ? (
-            <Bars rows={exitRows} labelWidth={170} height={22} />
+            <Bars rows={exitRows} labelWidth={170} height={22} colors={CHART_PALETTE.slice()} />
           ) : (
             <Empty />
           )}

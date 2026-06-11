@@ -12,6 +12,8 @@ export type BarRow = {
   max?: number
   /** Optional display string (else the value is rendered). */
   display?: string
+  /** Optional per-row fill (highest priority). */
+  color?: string
 }
 
 export type BarsProps = {
@@ -21,8 +23,10 @@ export type BarsProps = {
   className?: string
   /** Default formatter for the value when row.display is absent. */
   format?: (v: number) => string
-  /** Optional bar fill color. Defaults to black. */
+  /** Single uniform bar fill (legacy). Used when neither row.color nor `colors` is provided. */
   color?: string
+  /** Optional per-bar color array. Cycled with `colors[i % colors.length]`. */
+  colors?: string[]
 }
 
 function pct(t: number): string {
@@ -37,6 +41,7 @@ export function Bars({
   className,
   format = (v) => v.toLocaleString('en-US'),
   color,
+  colors,
 }: BarsProps) {
   const explicitMax = rows.reduce((m, r) => Math.max(m, r.max ?? 0), 0)
   const valuesMax = rows.reduce((m, r) => Math.max(m, r.value), 0)
@@ -44,6 +49,18 @@ export function Bars({
 
   const { state, show, move, hide } = useTooltip()
   const [hovered, setHovered] = useState<number | null>(null)
+
+  // Resolve per-row fill. Priority:
+  //   1) row.color (per-row override)
+  //   2) explicit `colors[]` per-bar array
+  //   3) uniform `color` prop (legacy)
+  //   4) default black (preserves non-categorical look)
+  const resolveColor = (row: BarRow, i: number): string => {
+    if (row.color) return row.color
+    if (colors && colors.length > 0) return colors[i % colors.length]
+    if (color) return color
+    return '#000'
+  }
 
   return (
     <div className={cn('flex flex-col', className)} style={{ rowGap: 2 }}>
@@ -54,6 +71,7 @@ export function Bars({
         const outline = isHovered
           ? 'inset 0 0 0 1.5px rgba(255,255,255,1)'
           : undefined
+        const fill = resolveColor(r, i)
         return (
           <div
             key={`${r.label}-${i}`}
@@ -98,7 +116,7 @@ export function Bars({
                 style={{
                   width: `${(pctVal * 100).toFixed(2)}%`,
                   boxShadow: outline,
-                  background: color ?? '#000',
+                  background: fill,
                 }}
               />
             </div>

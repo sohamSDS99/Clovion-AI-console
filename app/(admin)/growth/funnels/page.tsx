@@ -34,19 +34,6 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
     ? await loadFunnel(primaryFunnel.funnelId)
     : null
 
-  // Index the selected funnel within `list` so its highlight color matches the
-  // color it gets in the cards grid below.
-  const selectedIndex = selected
-    ? list.findIndex((f) => f.funnelId === selected.funnelId)
-    : -1
-  const selectedColor = selected
-    ? paletteAt(selectedIndex >= 0 ? selectedIndex : 0)
-    : undefined
-
-  // Primary funnel uses the first palette slot (index 0) so it visually anchors
-  // the cards grid below (where the first card also gets index 0).
-  const primaryColor = paletteAt(0)
-
   return (
     <>
       <PageHeader
@@ -111,7 +98,6 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
                 conversionPct: s.conversionPct * 100,
               }))}
               labelWidth={240}
-              color={selectedColor}
             />
           ) : (
             <Empty />
@@ -131,16 +117,16 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
                 BARS
               </div>
               <Bars
-                rows={primaryDetail.stepResults.map((s) => ({
+                rows={primaryDetail.stepResults.map((s, i) => ({
                   label: s.step.replace(/_/g, ' '),
                   value: s.entered,
                   display: `${formatNumber(s.entered)}→${formatNumber(
                     s.completed,
                   )} · ${formatPercent(s.conversionPct, undefined, 1)}`,
+                  color: paletteAt(i),
                 }))}
                 labelWidth={180}
                 height={16}
-                color={primaryColor}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -156,7 +142,6 @@ export default async function FunnelsPage({ searchParams }: FunnelsPageProps) {
                   }))}
                   width={420}
                   stepHeight={48}
-                  color={primaryColor}
                 />
               </div>
             </div>

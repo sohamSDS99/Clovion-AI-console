@@ -632,7 +632,7 @@ export default async function PipelinePage() {
           {failureBars.length === 0 ? (
             <Empty />
           ) : (
-            <Bars rows={failureBars} labelWidth={120} />
+            <Bars rows={failureBars} labelWidth={120} colors={CHART_PALETTE.slice()} />
           )}
         </Panel>
         <Panel
@@ -642,7 +642,7 @@ export default async function PipelinePage() {
           {skippedBars.length === 0 ? (
             <Empty />
           ) : (
-            <Bars rows={skippedBars} labelWidth={120} />
+            <Bars rows={skippedBars} labelWidth={120} colors={CHART_PALETTE.slice()} />
           )}
         </Panel>
       </div>

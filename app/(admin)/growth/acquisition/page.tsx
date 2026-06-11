@@ -95,6 +95,7 @@ export default async function AcquisitionPage() {
     label: r.channel.replace(/_/g, ' ').toUpperCase(),
     value: r.share * 100,
     display: formatPercent(r.share, undefined, 1),
+    color: channelColor(r.channel),
   }))
 
   // ----- CHANNEL SHARE · 28D donut -----

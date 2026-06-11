@@ -5,6 +5,7 @@ import { DataTable } from '@/components/admin/DataTable'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
 import { pageMeta } from '@/lib/admin/content'
+import { CHART_PALETTE } from '@/lib/admin/palette'
 import { loadAudit, type AuditRow } from '@/lib/admin/queries/audit'
 import { formatNumber, formatRelativeTime } from '@/lib/admin/format'
 import type { ColumnDef } from '@/components/admin/DataTable'
@@ -221,7 +222,7 @@ export default async function AuditPage() {
           {actionRows.length === 0 ? (
             <Empty message="NO ACTIONS" />
           ) : (
-            <Bars rows={actionRows} labelWidth={140} height={18} />
+            <Bars rows={actionRows} labelWidth={140} height={18} colors={CHART_PALETTE.slice()} />
           )}
         </Panel>
 
@@ -229,7 +230,7 @@ export default async function AuditPage() {
           {actorRows.length === 0 ? (
             <Empty message="NO ACTORS" />
           ) : (
-            <Bars rows={actorRows} labelWidth={180} height={18} />
+            <Bars rows={actorRows} labelWidth={180} height={18} colors={CHART_PALETTE.slice()} />
           )}
         </Panel>
       </div>
