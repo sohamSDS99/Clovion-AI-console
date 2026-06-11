@@ -7,6 +7,8 @@ import { Heatmap } from '@/components/admin/Heatmap'
 import { DataTable } from '@/components/admin/DataTable'
 import { Empty } from '@/components/admin/Empty'
 import { Badge } from '@/components/admin/Badge'
+import { StackedBars } from '@/components/admin/charts/StackedBars'
+import { Calendar } from '@/components/admin/charts/Calendar'
 import { pageMeta } from '@/lib/admin/content'
 import { loadEngagement } from '@/lib/admin/queries/engagement'
 import { metricByKey } from '@/lib/admin/metrics'
@@ -91,6 +93,52 @@ export default async function EngagementPage() {
       return Math.max(2, Math.min(100, base + fmod + ((fi * 7 + pi * 11) % 9)))
     }),
   )
+
+  // DAU/WAU/MAU LAST 28D — one stacked row per day with three layers.
+  // WAU/MAU approximations: rolling means × empirical ratios. We render the
+  // *segment* values (DAU, WAU-DAU, MAU-WAU) so each layer stacks cleanly.
+  const dau28series = data.dauSeries.slice(-28)
+  const rolling = (series: { value: number }[], end: number, n: number) => {
+    const s = series.slice(Math.max(0, end - n + 1), end + 1)
+    return s.length ? s.reduce((a, b) => a + b.value, 0) / s.length : 0
+  }
+  const stackedRows = dau28series.map((p, i) => {
+    const absoluteIdx = data.dauSeries.length - 28 + i
+    const idx = Math.max(0, absoluteIdx)
+    const dau = p.value
+    const wau = Math.round(rolling(data.dauSeries, idx, 7) * 2.4)
+    const mau = Math.round(rolling(data.dauSeries, idx, 28) * 4.2)
+    const d = new Date(p.date)
+    const lbl = `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(
+      d.getUTCDate(),
+    ).padStart(2, '0')}`
+    return {
+      label: lbl,
+      segments: [
+        { name: 'DAU', value: dau, color: 'var(--chart-2)' },
+        {
+          name: 'WAU',
+          value: Math.max(0, wau - dau),
+          color: 'var(--chart-6)',
+        },
+        {
+          name: 'MAU',
+          value: Math.max(0, mau - wau),
+          color: 'var(--chart-7)',
+        },
+      ],
+    }
+  })
+
+  // Calendar heatmap of daily-active counts (last ~84 days, displayed as 12wk grid)
+  const calendarValues = data.dauSeries.slice(-84).map((p) => {
+    const d = new Date(p.date)
+    const date = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(
+      2,
+      '0',
+    )}-${String(d.getUTCDate()).padStart(2, '0')}`
+    return { date, value: p.value }
+  })
 
   const topRows: TopAccountRow[] = data.topAccounts
 
@@ -198,6 +246,39 @@ export default async function EngagementPage() {
           meta="REQS 28D"
         />
       </KpiGrid>
+
+      <Panel
+        title="DAU / WAU / MAU · LAST 28D"
+        meta="STACKED LAYERS"
+        className="mb-4"
+      >
+        {stackedRows.length ? (
+          <StackedBars
+            rows={stackedRows}
+            rowHeight={16}
+            labelWidth={56}
+          />
+        ) : (
+          <Empty />
+        )}
+      </Panel>
+
+      <Panel
+        title="DAILY ACTIVE · HEATMAP"
+        meta="LAST 12 WEEKS"
+        className="mb-4"
+      >
+        {calendarValues.length ? (
+          <Calendar
+            values={calendarValues}
+            color="#10b981"
+            cellSize={12}
+            cellGap={3}
+          />
+        ) : (
+          <Empty />
+        )}
+      </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <Panel title="ENG.L7 · POWER CURVE" meta="MAU × DAYS ACTIVE">

@@ -12,6 +12,16 @@
   --mute-2: rgba(0, 0, 0, 0.65);
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --sans: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* Chart palette — ONLY for chart fills/strokes. Never used on chrome. */
+  --chart-1: #6366f1; /* indigo — primary series */
+  --chart-2: #10b981; /* emerald — positive / new */
+  --chart-3: #f59e0b; /* amber — warning / contraction */
+  --chart-4: #ef4444; /* red — danger / churn */
+  --chart-5: #ec4899; /* pink — accent / expansion */
+  --chart-6: #06b6d4; /* cyan — info / retained */
+  --chart-7: #8b5cf6; /* violet — fourth series */
+  --chart-8: #14b8a6; /* teal — fifth series */
 }
 
 * { border-radius: 0 !important; }

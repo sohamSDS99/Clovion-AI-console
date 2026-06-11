@@ -4,11 +4,13 @@ import { Panel } from '@/components/admin/Panel'
 import { DataTable } from '@/components/admin/DataTable'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
+import { RadialBars } from '@/components/admin/charts/RadialBars'
+import { AreaChart } from '@/components/admin/charts/AreaChart'
 import { pageMeta } from '@/lib/admin/content'
 import { loadPipeline } from '@/lib/admin/queries/pipeline'
 import { db } from '@/lib/db'
 import { llmCostLedger, accounts, subscriptions } from '@/lib/db/schema'
-import { sql, desc, eq } from 'drizzle-orm'
+import { sql, desc, eq, gte } from 'drizzle-orm'
 import {
   formatCents,
   formatDuration,
@@ -19,7 +21,7 @@ import {
   planLabel,
 } from '@/lib/admin/format'
 import type { ColumnDef } from '@/components/admin/DataTable'
-import type { PlanTier } from '@/lib/db/types'
+import type { PlanTier, EngineKey } from '@/lib/db/types'
 
 const m = pageMeta['/pipeline']!
 
@@ -184,6 +186,17 @@ const COST_COLS: ColumnDef<CostRow, any>[] = [
   },
 ]
 
+const CHART_PALETTE = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+  'var(--chart-6)',
+  'var(--chart-7)',
+  'var(--chart-8)',
+]
+
 export default async function PipelinePage() {
   const data = await loadPipeline()
 
@@ -273,6 +286,94 @@ export default async function PipelinePage() {
     ...e,
     freshnessLagH: ((i * 3) % 12) + 1,
   }))
+
+  // ENGINE HEALTH — 6 rings sorted by success descending; color by threshold
+  const healthRings = [...data.engines]
+    .sort((a, b) => b.successPct - a.successPct)
+    .slice(0, 6)
+    .map((e) => {
+      const pct = e.successPct
+      const color =
+        pct >= 0.98
+          ? 'var(--chart-2)' // emerald
+          : pct >= 0.9
+            ? 'var(--chart-3)' // amber
+            : 'var(--chart-4)' // red
+      return {
+        label: e.engine.toUpperCase(),
+        value: pct,
+        max: 1,
+        color,
+        sublabel: `${formatNumber(e.total)} RUN`,
+      }
+    })
+
+  // SPEND BY ENGINE · 7D — aggregate llm_cost_ledger by engine per day for last 7 days
+  const now = Date.now()
+  const dayMs = 24 * 60 * 60 * 1000
+  const dayStarts: number[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now - i * dayMs)
+    d.setHours(0, 0, 0, 0)
+    dayStarts.push(d.getTime())
+  }
+  const cutoff7d = dayStarts[0]
+
+  const ledger7d = db
+    .select({
+      engine: llmCostLedger.engine,
+      occurredAt: llmCostLedger.occurredAt,
+      cost: llmCostLedger.costUsdMicrocents,
+    })
+    .from(llmCostLedger)
+    .where(gte(llmCostLedger.occurredAt, new Date(cutoff7d)))
+    .all()
+
+  // Bucket by engine x day
+  const engineDayMap = new Map<EngineKey, number[]>()
+  for (const e of data.engines) {
+    engineDayMap.set(e.engine, new Array(7).fill(0))
+  }
+  for (const row of ledger7d) {
+    const t = row.occurredAt instanceof Date ? row.occurredAt.getTime() : Number(row.occurredAt)
+    let bucket = -1
+    for (let i = 0; i < dayStarts.length; i++) {
+      if (t >= dayStarts[i] && (i === dayStarts.length - 1 || t < dayStarts[i + 1])) {
+        bucket = i
+        break
+      }
+    }
+    if (bucket < 0) continue
+    const arr = engineDayMap.get(row.engine as EngineKey)
+    if (!arr) {
+      engineDayMap.set(row.engine as EngineKey, new Array(7).fill(0))
+    }
+    const target = engineDayMap.get(row.engine as EngineKey)!
+    // Convert microcents to cents for readability
+    target[bucket] = (target[bucket] ?? 0) + Math.round(Number(row.cost ?? 0) / 10_000)
+  }
+
+  // Pick top 6 engines by total spend for clarity
+  const engineTotals = Array.from(engineDayMap.entries()).map(
+    ([engine, arr]) => ({ engine, total: arr.reduce((s, v) => s + v, 0), arr }),
+  )
+  const topEngineSeries = engineTotals
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 6)
+    .map((e, idx) => ({
+      name: String(e.engine).toUpperCase(),
+      color: CHART_PALETTE[idx % CHART_PALETTE.length],
+      values: e.arr,
+    }))
+
+  const spendXLabels = dayStarts.map((t) => {
+    const d = new Date(t)
+    return `${d.getMonth() + 1}/${d.getDate()}`
+  })
+
+  const spendSeriesHasData = topEngineSeries.some((s) =>
+    s.values.some((v) => v > 0),
+  )
 
   return (
     <>
@@ -376,6 +477,33 @@ export default async function PipelinePage() {
           />
         </div>
       </KpiGrid>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-3">
+        <Panel
+          title="ENGINE / HEALTH"
+          meta={`${healthRings.length} RINGS · SUCCESS %`}
+        >
+          {healthRings.length === 0 ? (
+            <Empty />
+          ) : (
+            <RadialBars items={healthRings} size={104} thickness={9} />
+          )}
+        </Panel>
+        <Panel
+          title="SPEND BY ENGINE · 7D"
+          meta={`${topEngineSeries.length} ENGINES · USD`}
+        >
+          {spendSeriesHasData ? (
+            <AreaChart
+              series={topEngineSeries}
+              xLabels={spendXLabels}
+              height={180}
+            />
+          ) : (
+            <Empty />
+          )}
+        </Panel>
+      </div>
 
       <Panel title="ENGINE / STATUS BOARD" meta={`${data.engines.length} ENGINES`} className="mb-3">
         {engineRows.length === 0 ? (

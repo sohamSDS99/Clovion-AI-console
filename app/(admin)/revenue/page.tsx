@@ -5,6 +5,8 @@ import { DataTable } from '@/components/admin/DataTable'
 import { Waterfall } from '@/components/admin/Waterfall'
 import { Bars } from '@/components/admin/Bars'
 import { Empty } from '@/components/admin/Empty'
+import { AreaChart } from '@/components/admin/charts/AreaChart'
+import { Donut } from '@/components/admin/charts/Donut'
 import { pageMeta } from '@/lib/admin/content'
 import { loadRevenue } from '@/lib/admin/queries/revenue'
 import { metricByKey } from '@/lib/admin/metrics'
@@ -46,6 +48,19 @@ function benchmarkMeta(key: string): string | undefined {
   if (def?.benchmark) return formatBenchmark(def.benchmark)
   return def?.grain.toUpperCase()
 }
+
+// Tier color: starter (cyan), growth (indigo), enterprise (pink), free (teal).
+const TIER_COLOR: Record<string, string> = {
+  free: '#14b8a6',
+  starter: '#06b6d4',
+  growth: '#6366f1',
+  enterprise: '#ec4899',
+}
+const TIER_ORDER: Array<'free' | 'starter' | 'growth' | 'enterprise'> = [
+  'starter',
+  'growth',
+  'enterprise',
+]
 
 const DUNNING_COLS: ColumnDef<DunningRow, any>[] = [
   {
@@ -202,6 +217,35 @@ export default async function RevenuePage() {
     { label: 'END', value: data.waterfall.endMrr, kind: 'end' as const },
   ]
 
+  // MRR 60D area series — values in USD dollars for tick readability
+  const mrr60 = data.mrrSeries.slice(-60)
+  const mrrAreaSeries = [
+    {
+      name: 'MRR',
+      color: 'var(--chart-1)',
+      values: mrr60.map((p) => p.value / 100),
+    },
+  ]
+  const mrrAreaLabels = mrr60.map((p) => {
+    const d = new Date(p.date)
+    return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(
+      d.getUTCDate(),
+    ).padStart(2, '0')}`
+  })
+
+  // MRR by tier — uses arpaByTier (arpa × accounts = tier MRR sum, in cents)
+  const tierMap = new Map(data.arpaByTier.map((t) => [t.tier, t]))
+  const mrrTierSlices = TIER_ORDER.map((tier) => {
+    const t = tierMap.get(tier)
+    const value = t ? t.arpa * t.accounts : 0
+    return {
+      label: planLabel(tier as PlanTier),
+      value,
+      color: TIER_COLOR[tier],
+    }
+  }).filter((s) => s.value > 0)
+  const mrrTierTotal = mrrTierSlices.reduce((s, x) => s + x.value, 0)
+
   return (
     <>
       <PageHeader section={m.section} label={m.label} meta="LAST 30D" />
@@ -343,6 +387,32 @@ export default async function RevenuePage() {
           />
         </div>
       </KpiGrid>
+
+      {/* MRR 60D area + MRR by tier flank the waterfall */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mb-3">
+        <Panel title="MRR / 60D" meta="USD" className="xl:col-span-2">
+          <AreaChart
+            series={mrrAreaSeries}
+            xLabels={mrrAreaLabels}
+            height={200}
+            width={720}
+            showLegend={false}
+          />
+        </Panel>
+        <Panel title="MRR / BY TIER" meta="ACTIVE">
+          {mrrTierSlices.length === 0 ? (
+            <Empty />
+          ) : (
+            <Donut
+              slices={mrrTierSlices}
+              size={160}
+              thickness={22}
+              centerValue={formatCents(mrrTierTotal, 0)}
+              centerLabel="MRR"
+            />
+          )}
+        </Panel>
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mb-3">
         <Panel

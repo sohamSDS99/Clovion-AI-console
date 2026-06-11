@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "console",
-      "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd '/Users/sohamsarker/Clovion AI/site' && npm run dev"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "autoPort": true
     }

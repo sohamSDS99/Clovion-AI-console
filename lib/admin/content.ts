@@ -15,6 +15,7 @@ export const pageMeta: Record<string, PageMeta> = {
   '/retention': { section: 'GROWTH', label: 'Retention' },
   '/revenue': { section: 'GROWTH', label: 'Revenue' },
   '/funnels': { section: 'GROWTH', label: 'Funnels' },
+  '/journey': { section: 'GROWTH', label: 'User Journey' },
   '/performance': { section: 'PLATFORM', label: 'Performance' },
   '/pipeline': { section: 'PLATFORM', label: 'Pipeline Ops' },
   '/support': { section: 'PLATFORM', label: 'Support & NPS' },

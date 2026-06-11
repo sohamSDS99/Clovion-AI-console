@@ -5,6 +5,8 @@ import { DataTable } from '@/components/admin/DataTable'
 import { Waterfall } from '@/components/admin/Waterfall'
 import { FreshnessStrip } from '@/components/admin/FreshnessStrip'
 import { Empty } from '@/components/admin/Empty'
+import { MultiLine } from '@/components/admin/charts/MultiLine'
+import { Donut } from '@/components/admin/charts/Donut'
 import { pageMeta } from '@/lib/admin/content'
 import { loadCommandCenter } from '@/lib/admin/queries/command-center'
 import { loadRevenue } from '@/lib/admin/queries/revenue'
@@ -17,9 +19,11 @@ import {
   formatPercent,
   formatRelativeTime,
   formatTokens,
+  planLabel,
   roleLabel,
 } from '@/lib/admin/format'
 import type { ColumnDef } from '@/components/admin/DataTable'
+import type { PlanTier } from '@/lib/db/types'
 
 const m = pageMeta['/']!
 
@@ -108,6 +112,28 @@ const ALERT_COLS: ColumnDef<AlertRow, any>[] = [
   },
 ]
 
+// Normalize series to a 0–100 index so 3 unrelated metrics share one Y-axis.
+function normalize(values: number[]): number[] {
+  if (values.length === 0) return []
+  const lo = Math.min(...values)
+  const hi = Math.max(...values)
+  const span = hi - lo || 1
+  return values.map((v) => ((v - lo) / span) * 100)
+}
+
+// Tier color: aligns with revenue palette intent — starter (cyan), growth (indigo), enterprise (pink).
+const TIER_COLOR: Record<string, string> = {
+  free: '#14b8a6',
+  starter: '#06b6d4',
+  growth: '#6366f1',
+  enterprise: '#ec4899',
+}
+const TIER_ORDER: Array<'free' | 'starter' | 'growth' | 'enterprise'> = [
+  'starter',
+  'growth',
+  'enterprise',
+]
+
 export default async function CommandCenterPage() {
   const data = await loadCommandCenter()
   const rev = await loadRevenue()
@@ -143,6 +169,34 @@ export default async function CommandCenterPage() {
     },
     { label: 'END', value: rev.waterfall.endMrr, kind: 'end' as const },
   ]
+
+  // TREND 60D — three series share one normalized Y so they read on the same axis.
+  const mrrVals = data.trend60d.mrr.map((p) => p.value)
+  const dauVals = data.trend60d.dau.map((p) => p.value)
+  const spendVals = data.trend60d.pipelineSpend.map((p) => p.value)
+  const trendSeries = [
+    { name: 'MRR', color: 'var(--chart-1)', values: normalize(mrrVals) },
+    { name: 'DAU', color: 'var(--chart-6)', values: normalize(dauVals) },
+    { name: 'PIPE SPEND', color: 'var(--chart-3)', values: normalize(spendVals) },
+  ]
+  const trendXLabels = data.trend60d.mrr.map((p) => {
+    const d = new Date(p.date)
+    return `${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(
+      d.getUTCDate(),
+    ).padStart(2, '0')}`
+  })
+
+  // MRR by plan tier — Starter / Growth / Enterprise
+  const tierMap = new Map(data.mrrByTier.map((t) => [t.tier, t]))
+  const mrrTierSlices = TIER_ORDER.map((tier) => {
+    const t = tierMap.get(tier)
+    return {
+      label: planLabel(tier as PlanTier),
+      value: t ? t.mrr : 0,
+      color: TIER_COLOR[tier],
+    }
+  }).filter((s) => s.value > 0)
+  const mrrTotal = mrrTierSlices.reduce((s, x) => s + x.value, 0)
 
   return (
     <>
@@ -197,6 +251,37 @@ export default async function CommandCenterPage() {
           </div>
         ))}
       </KpiGrid>
+
+      {/* TREND 60D + MRR BY TIER */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 mb-3">
+        <Panel
+          title="TREND / 60D"
+          meta="INDEX 0–100"
+          className="xl:col-span-2"
+        >
+          <MultiLine
+            series={trendSeries}
+            xLabels={trendXLabels}
+            height={200}
+            width={720}
+            yMin={0}
+            yMax={100}
+          />
+        </Panel>
+        <Panel title="MRR / BY TIER" meta="ACTIVE SUBS">
+          {mrrTierSlices.length === 0 ? (
+            <Empty />
+          ) : (
+            <Donut
+              slices={mrrTierSlices}
+              size={160}
+              thickness={22}
+              centerValue={formatCents(mrrTotal, 0)}
+              centerLabel="MRR"
+            />
+          )}
+        </Panel>
+      </div>
 
       {/* Two-column: Anomalies + MRR waterfall */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-3">

@@ -27,34 +27,35 @@ export const NAV: NavGroup[] = [
       { n: 5, code: 'RET', label: 'Retention', href: '/retention' },
       { n: 6, code: 'REV', label: 'Revenue', href: '/revenue' },
       { n: 7, code: 'FNL', label: 'Funnels', href: '/funnels' },
+      { n: 8, code: 'JNY', label: 'User Journey', href: '/journey' },
     ],
   },
   {
     group: 'PLATFORM',
     items: [
-      { n: 8, code: 'PRF', label: 'Performance', href: '/performance' },
-      { n: 9, code: 'PIP', label: 'Pipeline', href: '/pipeline' },
-      { n: 10, code: 'SUP', label: 'Support', href: '/support' },
+      { n: 9, code: 'PRF', label: 'Performance', href: '/performance' },
+      { n: 10, code: 'PIP', label: 'Pipeline', href: '/pipeline' },
+      { n: 11, code: 'SUP', label: 'Support', href: '/support' },
     ],
   },
   {
     group: 'CUSTOMERS',
-    items: [{ n: 11, code: 'ACT', label: 'Accounts', href: '/accounts' }],
+    items: [{ n: 12, code: 'ACT', label: 'Accounts', href: '/accounts' }],
   },
   {
     group: 'OPERATE',
     items: [
-      { n: 12, code: 'OPS', label: 'Operations', href: '/operations' },
-      { n: 13, code: 'FLG', label: 'Flags', href: '/flags' },
-      { n: 14, code: 'ALR', label: 'Alerts', href: '/alerts' },
+      { n: 13, code: 'OPS', label: 'Operations', href: '/operations' },
+      { n: 14, code: 'FLG', label: 'Flags', href: '/flags' },
+      { n: 15, code: 'ALR', label: 'Alerts', href: '/alerts' },
     ],
   },
   {
     group: 'GOVERN',
     items: [
-      { n: 15, code: 'AUD', label: 'Audit', href: '/audit' },
-      { n: 16, code: 'GDP', label: 'GDPR', href: '/gdpr' },
-      { n: 17, code: 'SET', label: 'Settings', href: '/settings' },
+      { n: 16, code: 'AUD', label: 'Audit', href: '/audit' },
+      { n: 17, code: 'GDP', label: 'GDPR', href: '/gdpr' },
+      { n: 18, code: 'SET', label: 'Settings', href: '/settings' },
     ],
   },
 ]
