@@ -57,14 +57,11 @@ export function Sidebar({ user }: SidebarProps) {
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 pl-3 pr-3 text-[12px] leading-none',
+                    'flex items-center pl-4 pr-3 text-[12px] leading-none',
                     active ? 'bg-white/10 text-white' : 'text-white/70',
                   )}
                   style={{ height: 34 }}
                 >
-                  <span className="text-white/35 font-mono text-[10px] tabular-nums w-4">
-                    {String(item.n).padStart(2, '0')}
-                  </span>
                   <span className="truncate">{item.label}</span>
                 </Link>
               </li>
