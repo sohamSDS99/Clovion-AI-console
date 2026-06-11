@@ -57,16 +57,13 @@ export function Sidebar({ user }: SidebarProps) {
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-2 pl-3 pr-3 font-mono text-[11px] leading-none',
+                    'flex items-center gap-3 pl-3 pr-3 text-[12px] leading-none',
                     active ? 'bg-white/10 text-white' : 'text-white/70',
                   )}
-                  style={{ height: 32 }}
+                  style={{ height: 34 }}
                 >
-                  <span className="text-white/40 w-4 tabular-nums">
+                  <span className="text-white/35 font-mono text-[10px] tabular-nums w-4">
                     {String(item.n).padStart(2, '0')}
-                  </span>
-                  <span className="uppercase tracking-[0.06em] w-9 text-white/60">
-                    {item.code}
                   </span>
                   <span className="truncate">{item.label}</span>
                 </Link>

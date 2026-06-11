@@ -17,14 +17,13 @@ export function TabStrip({ tabs }: { tabs: Tab[] }) {
             key={t.href}
             href={t.href}
             className={cn(
-              'px-3 h-9 inline-flex items-center text-[10px] uppercase tracking-[0.12em] font-mono tabular-nums border-b-2 -mb-px',
+              'px-3 h-9 inline-flex items-center text-[11px] uppercase tracking-[0.12em] border-b-2 -mb-px',
               active
                 ? 'border-black opacity-100 font-semibold'
                 : 'border-transparent opacity-50 hover:opacity-80',
             )}
           >
-            <span className="opacity-50 mr-1.5">{t.code}</span>
-            <span>{t.label}</span>
+            {t.label}
           </Link>
         )
       })}
