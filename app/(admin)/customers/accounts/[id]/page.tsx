@@ -376,7 +376,7 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
                   TODAY
                 </span>
               </div>
-              <Sparkline values={dau28} width={420} height={48} />
+              <Sparkline values={dau28} width={420} height={48} color={CHART_PALETTE[0]} label="DAU" />
               <div className="grid grid-cols-3 gap-px bg-black/15 border border-black/15">
                 <Cell label="AVG 7D" value={formatNumber(Math.round(dauAvg7))} numeric />
                 <Cell label="AVG 28D" value={formatNumber(Math.round(dauAvg28))} numeric />

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
 import { Sparkline } from './Sparkline'
+import { paletteForKey } from '@/lib/admin/palette'
 
 export type KpiDelta = {
   pct: number
@@ -56,7 +57,14 @@ export function KpiCard({
           {value}
         </span>
         {spark && spark.length > 0 ? (
-          <Sparkline values={spark} width={60} height={20} stroke={1.25} />
+          <Sparkline
+            values={spark}
+            width={60}
+            height={20}
+            stroke={1.5}
+            color={paletteForKey(label)}
+            label={label}
+          />
         ) : null}
       </div>
       <div className="flex items-center gap-1.5 text-[10px] font-mono tabular-nums text-black/70 leading-none min-h-[12px]">
